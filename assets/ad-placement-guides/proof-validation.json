@@ -1,0 +1,303 @@
+{
+  "status": "PASS",
+  "scenarios": 41,
+  "uniqueImages": 42,
+  "validatedImages": 42,
+  "errors": [],
+  "images": [
+    {
+      "key": "splash",
+      "width": 278,
+      "height": 604,
+      "bytes": 4571,
+      "sha256": "cb10199bd72a6cf3b232107382a5c28477b5ca42871d7f57856ac2fd89987a34"
+    },
+    {
+      "key": "home",
+      "width": 252,
+      "height": 604,
+      "bytes": 34886,
+      "sha256": "0ec4c1b4bfe4a99fdbbb732bc9049a2ae765585ce7b2e3a0ceefa864f10be92e"
+    },
+    {
+      "key": "search",
+      "width": 278,
+      "height": 604,
+      "bytes": 27089,
+      "sha256": "f87d10f041bcbe0922f078d9e69daf8e52e9b807405029f353cf5976623a0696"
+    },
+    {
+      "key": "no-search",
+      "width": 278,
+      "height": 604,
+      "bytes": 12205,
+      "sha256": "8e8fccd33e77c0808abbc4d9e2e3b97d3ed7a79ae3371e95d16c7f8f2e71cdee"
+    },
+    {
+      "key": "detail-image",
+      "width": 278,
+      "height": 604,
+      "bytes": 24497,
+      "sha256": "3d1a8f637857cbd9013497f480c28c7a02553db8720673ac3105e32e305b8c92"
+    },
+    {
+      "key": "detail-video",
+      "width": 264,
+      "height": 604,
+      "bytes": 21651,
+      "sha256": "4f3e530108bae9a3fd7524c641c82a60df5669e3001f2b4dc25cd4440c435651"
+    },
+    {
+      "key": "creating",
+      "width": 278,
+      "height": 604,
+      "bytes": 23488,
+      "sha256": "86bb83d8c5f277b26e6014e17b27891b64e92454c6510dd1c5925470f8140c43"
+    },
+    {
+      "key": "rewarded",
+      "width": 278,
+      "height": 604,
+      "bytes": 3504,
+      "sha256": "b5af18516d647a5fc50c8757d634ffc01cc8e9577eecb285bcbf38ced3d17074"
+    },
+    {
+      "key": "creating-hd-after",
+      "width": 278,
+      "height": 604,
+      "bytes": 23038,
+      "sha256": "73c69d44edcecca6101bcc94361ecfa1a727892cb29094fc6fbcb6d2c8e3307a"
+    },
+    {
+      "key": "complete",
+      "width": 278,
+      "height": 604,
+      "bytes": 22997,
+      "sha256": "86f955f3eb5040181e7e51a5106a4dcf34839bd69ebc539bdae7acd5126c1a00"
+    },
+    {
+      "key": "save-video",
+      "width": 278,
+      "height": 604,
+      "bytes": 26075,
+      "sha256": "930f67ac758a450b235881143363082117ba1aac0dea48166dec318f57e8c7c1"
+    },
+    {
+      "key": "saved",
+      "width": 278,
+      "height": 604,
+      "bytes": 22302,
+      "sha256": "5eb0b09e83b468c4ca717349100ea6f78508c07dbedf9288c6b981c46e608319"
+    },
+    {
+      "key": "interstitial",
+      "width": 278,
+      "height": 604,
+      "bytes": 3495,
+      "sha256": "2b93a23786d10bca50a94442f4fc755d5cfde269f66e6457e62ed81d085d4e29"
+    },
+    {
+      "key": "works",
+      "width": 278,
+      "height": 604,
+      "bytes": 33586,
+      "sha256": "e16c356d6a5310719855c43335ce64fb7237a84eb0f7b99c3b9e39d3cbee5a08"
+    },
+    {
+      "key": "work-image",
+      "width": 278,
+      "height": 604,
+      "bytes": 24598,
+      "sha256": "8fd111176338546963878acb418b7bad3ff586b256bfbebdd9405d09152f6557"
+    },
+    {
+      "key": "work-video",
+      "width": 278,
+      "height": 604,
+      "bytes": 25893,
+      "sha256": "cef21fa7a043296cd3bb21dd790c66feef946fc1ace721be1ba476b500c4d0a0"
+    },
+    {
+      "key": "wallpaper-records",
+      "width": 278,
+      "height": 604,
+      "bytes": 15993,
+      "sha256": "2e72067074d016136aec15d194e33a303943742ec2016ed8bd10a6a1b2ed4d12"
+    },
+    {
+      "key": "profile",
+      "width": 278,
+      "height": 604,
+      "bytes": 18491,
+      "sha256": "aa658ee071bb5830d7d8b758f0b7b2d6045f90d9cd46a69f815801cace1376d8"
+    },
+    {
+      "key": "profile-in",
+      "width": 278,
+      "height": 604,
+      "bytes": 19164,
+      "sha256": "b9cd7ef7cfd2feb418db14f222fccd3f6aee642dcd34f4ca7a4886b881fd30df"
+    },
+    {
+      "key": "save-image",
+      "width": 278,
+      "height": 604,
+      "bytes": 27552,
+      "sha256": "776166a684b955eb0ccdcf3ebee6e70c3d343907704066103e67157b67137bee"
+    },
+    {
+      "key": "image-uhd-before",
+      "width": 278,
+      "height": 604,
+      "bytes": 27530,
+      "sha256": "4b1069d358a6d62bab3222218949e13620250d3c5f37a9ceabc2285434c8a22a"
+    },
+    {
+      "key": "image-watermark-after",
+      "width": 278,
+      "height": 604,
+      "bytes": 26288,
+      "sha256": "aef2bbe2d2cc44798dc71e725eec43346cece4d5b95aaadb31941f391c5615b9"
+    },
+    {
+      "key": "confirm-video",
+      "width": 278,
+      "height": 604,
+      "bytes": 25952,
+      "sha256": "603b462fcd93fae2e1c0305a32ae9556aa4f480f6cdcf21fa2a329c6df541159"
+    },
+    {
+      "key": "video-uhd-before",
+      "width": 278,
+      "height": 604,
+      "bytes": 25930,
+      "sha256": "827603b73e7028775174bb77342f4d0fd55280a9db36dd25a900b0810af95567"
+    },
+    {
+      "key": "video-watermark-after",
+      "width": 278,
+      "height": 604,
+      "bytes": 24986,
+      "sha256": "ad7dd3263b2b2a1f08fd31b0c894af50e2e2efbaf79c20a1b1aa27f3d2d668e3"
+    },
+    {
+      "key": "vip-experience",
+      "width": 278,
+      "height": 604,
+      "bytes": 9351,
+      "sha256": "55855df36282021f5d0ed5fc014e6b033fb96beec7ea6a64ef787d47e07822e6"
+    },
+    {
+      "key": "vip-wallpaper-experience",
+      "width": 278,
+      "height": 604,
+      "bytes": 9404,
+      "sha256": "25ab601ea4883eae70e145c9ab2ae5bed40e5c35c6c8f04c59999c675e96dca0"
+    },
+    {
+      "key": "vip-wallpaper-normal-unlock",
+      "width": 278,
+      "height": 604,
+      "bytes": 13284,
+      "sha256": "2be04c1604fdf1e9899dcae3f96177258e9f6165b44e39ef5ca153f97dcc06d6"
+    },
+    {
+      "key": "new-wallpaper-static",
+      "width": 278,
+      "height": 604,
+      "bytes": 9002,
+      "sha256": "557001b2743f6b6030062325950227a80408a477133e6ad59329c25f7c53f2c4"
+    },
+    {
+      "key": "wallpaper-static-success",
+      "width": 278,
+      "height": 604,
+      "bytes": 8810,
+      "sha256": "5ef414574bf84c04bd8f64e7ffb81bfbb2dc643d0c5d3fd2564374744623f8c5"
+    },
+    {
+      "key": "new-wallpaper-video",
+      "width": 278,
+      "height": 604,
+      "bytes": 9854,
+      "sha256": "d3eb0c0ced640e65c3e23146750e7ab9cba1012b8b09c3a1eaefdce4d5e74ad3"
+    },
+    {
+      "key": "wallpaper-video-success",
+      "width": 278,
+      "height": 604,
+      "bytes": 8787,
+      "sha256": "4867cf269c354a6ed713e87bfb57312e97c8f81293504ebf4bfad1edb04ca101"
+    },
+    {
+      "key": "new-wallpaper-motion",
+      "width": 278,
+      "height": 604,
+      "bytes": 9418,
+      "sha256": "0695baf8c0f665c0549fe7dfcb27bf530171cb772834d85436efa2ebff5010f3"
+    },
+    {
+      "key": "wallpaper-motion-success",
+      "width": 278,
+      "height": 604,
+      "bytes": 8614,
+      "sha256": "ea052ca97b5c98ff679eb26074299f22de0c18dc0b59c8299d9a7202934a8076"
+    },
+    {
+      "key": "new-wallpaper-custom",
+      "width": 278,
+      "height": 604,
+      "bytes": 21157,
+      "sha256": "a61961b876062228842014994ac3933a736a80f146abf154d1adc49d6ad18749"
+    },
+    {
+      "key": "new-wallpaper-custom-result",
+      "width": 278,
+      "height": 604,
+      "bytes": 22920,
+      "sha256": "c99389ab3e444d014b6442deeeaff2b76b770587516fad43528ff5da30bd789b"
+    },
+    {
+      "key": "new-wallpaper-history-detail",
+      "width": 278,
+      "height": 604,
+      "bytes": 9171,
+      "sha256": "c893e918e5870f0c5b71490e0e67d05b0c37839ee1b309bca633f8157ba29dd8"
+    },
+    {
+      "key": "browse-return-ad",
+      "width": 264,
+      "height": 604,
+      "bytes": 5745,
+      "sha256": "0fda102c11bf2ddcc81738ec73ee36b24749c970baaf6857e54e917bc64a6487"
+    },
+    {
+      "key": "new-coupons",
+      "width": 278,
+      "height": 604,
+      "bytes": 17947,
+      "sha256": "18af18a8928e9476916d8a897de5a8ec156e4572cadfed99ac643587ba8dce70"
+    },
+    {
+      "key": "coupon-reward-after",
+      "width": 278,
+      "height": 604,
+      "bytes": 21379,
+      "sha256": "8e84eec4bb020a0a581d11e74531b9a703ef272ab8ae0dfe9f1c62e7a525b491"
+    },
+    {
+      "key": "new-wallpaper",
+      "width": 278,
+      "height": 604,
+      "bytes": 16734,
+      "sha256": "eda9a305caeb10b271f7f9d24e7112fa545cb794b6e3cc4b943f375686841b80"
+    },
+    {
+      "key": "new-wallpaper-search",
+      "width": 278,
+      "height": 604,
+      "bytes": 13632,
+      "sha256": "6dc578c0d8fdf5a063301ccc9d717b5f1a7388aeaafad07949946c68efed16b4"
+    }
+  ]
+}

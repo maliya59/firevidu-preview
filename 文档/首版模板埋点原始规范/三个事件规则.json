@@ -1,0 +1,78 @@
+{
+  "scope": "仅文档和附图 本轮不修改原型",
+  "version": "1.0",
+  "events": [
+    "template_impression",
+    "template_click",
+    "template_save_success"
+  ],
+  "trigger": {
+    "template_impression": {
+      "visible_ratio": 0.5,
+      "continuous_visible_ms": 1000,
+      "active_foreground": true,
+      "dedup": [
+        "list_round_id",
+        "template_id"
+      ],
+      "fast_click": "无曝光时先补一条曝光 再记点击"
+    },
+    "template_click": {
+      "trigger": "用户真实点击模板封面",
+      "create_flow_id": true,
+      "requires": "impression_id"
+    },
+    "template_save_success": {
+      "trigger": "真实相册写入成功回报",
+      "dedup": [
+        "creation_id"
+      ],
+      "requires": [
+        "impression_id",
+        "click_event_id",
+        "flow_id"
+      ],
+      "exclude": [
+        "既有作品再次保存",
+        "壁纸设置",
+        "失败",
+        "取消",
+        "仅页面跳转"
+      ]
+    }
+  },
+  "cohort": {
+    "anchor": "impression occurred_at",
+    "timezone": "Asia/Kolkata",
+    "window_hours": 24,
+    "storage_timezone": "UTC",
+    "count": "distinct actor_id per style and filters"
+  },
+  "metrics": {
+    "E": "曝光人群去重用户",
+    "C": "同曝光集合24小时内点击用户",
+    "S": "同曝光集合24小时内点击后保存用户",
+    "ctr": "C / E * 100",
+    "click_save_rate": "S / C * 100",
+    "exposure_save_rate": "S / E * 100",
+    "zero_denominator": "—"
+  },
+  "event_fields": [
+    "event_id",
+    "event_name",
+    "occurred_at",
+    "actor_id",
+    "template_id",
+    "style_id",
+    "output_type",
+    "vip",
+    "source",
+    "position",
+    "list_round_id",
+    "impression_id",
+    "flow_id",
+    "click_event_id",
+    "creation_id"
+  ],
+  "notes": "flow_id与click_event_id适用于点击和保存 creation_id只用于保存 风格未知归未分类 不推断喜爱"
+}

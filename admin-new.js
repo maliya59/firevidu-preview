@@ -1,0 +1,192 @@
+/* FireVidu 新增后台；仅本地演示。与原后台复刻内容分开。 */
+(()=>{'use strict';
+const screens=[
+ {key:'admin-wallpaper-stats',title:'壁纸数据统计',section:'壁纸管理',parent:'admin-new-wallpapers',secondary:true},
+ {key:'admin-template-stats',title:'模板数据统计',section:'模板管理',parent:'templates',secondary:true},
+ {key:'admin-new-member-orders',title:'会员与订单查询',section:'增长与会员'},
+ {key:'admin-new-member',title:'会员价格配置',section:'增长与会员',parent:'admin-new-member-orders',secondary:true,hidden:false},
+ {key:'admin-new-coupon-records',title:'用户券记录',section:'用户券记录'},
+ {key:'admin-new-feedback',title:'用户反馈',section:'用户反馈'},
+ {key:'admin-new-wallpapers',title:'壁纸管理',section:'壁纸管理'},
+ {key:'admin-new-wallpaper-edit',title:'编辑壁纸',section:'壁纸管理',hidden:true},
+ {key:'admin-new-materials',title:'装饰素材与分类',section:'壁纸管理',hidden:true},
+ {key:'admin-new-events',title:'埋点清单',section:'数据记录 · 最低优先级',hidden:true},
+ {key:'admin-new-ad-rules',title:'新增广告规则',section:'广告配置',hidden:true}
+];
+
+const CATEGORY_STORAGE='firevidu-admin-material-categories-v1';
+const defaultCategories=[{id:'A',name:'分类名称 A',materialCount:8},{id:'B',name:'分类名称 B',materialCount:8}];
+let materialCategories=defaultCategories.map(x=>({...x}));
+try{const saved=JSON.parse(window.localStorage?.getItem(CATEGORY_STORAGE)||'null');if(Array.isArray(saved)&&saved.length&&saved.every(x=>x&&typeof x.id==='string'&&typeof x.name==='string'&&x.name.trim()))materialCategories=saved.map(x=>({id:x.id,name:x.name.trim(),materialCount:Number.isInteger(x.materialCount)&&x.materialCount>=0?x.materialCount:(['A','B'].includes(x.id)?8:0)}));}catch{}
+let activeMaterialCategory=materialCategories[0].id;
+function categoryRow(cat){const count=cat.materialCount||0;return `<div class="an-field an-category-row"><span ${H('分类名称','App 素材分类名称；可在本地新增或修改名称，正式文案由你填写。')}>分类名称 <small>${count?'含 '+count+' 个素材':'暂无素材'}</small></span><div class="an-category-input-row"><input data-category-id="${E(cat.id)}" data-material-count="${count}" value="${E(cat.name)}" placeholder="输入分类名称" ${H('分类名称','保存后立即更新素材分类标签及素材所属分类选项；只保存在当前浏览器。')}><button type="button" data-an="category-delete" ${H('删除分类','仅删除本地空分类；保存分类后生效。有素材的分类须先移走或删除素材，至少保留一个分类。')}>删除</button></div></div>`;}
+
+function categoryManager(root){return modal(root,'素材分类',`<p class="an-note">初始 A/B 为占位；填写分类名称后保存，会同步更新本页标签和素材所属分类。删除仅作用于本地副本，保存后生效；有素材的分类需先移走或删除素材，至少保留一个分类。</p><div class="an-form an-category-rows">${materialCategories.map(categoryRow).join('')}</div><div class="an-category-error" role="status"></div><div class="an-actions">${bt('新增分类','category-add')}${bt('保存分类','category-save',true)}</div>`);}
+
+const E=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FIELD_MEANINGS={
+ '邀请关系':'记录邀请人和被邀请好友的关联，用于追踪邀请来源及两阶段奖励。',
+ '绑定 / 版本':'记录邀请关系的建立时间和适用活动规则版本，方便核对当时承诺的奖励。',
+ '注册阶段':'好友通过链接绑定并注册，邀请人得1张去水印专用券，15天有效；同一好友仅触发一次。',
+ '收益阶段':'好友首次实际看激励广告并完成高清保存，双方各得1张通用券，15天有效；用券免广告或普通免费保存不触发。',
+ '操作':'查看对应记录详情，或执行该行已经提供的本地演示操作。',
+ '记录':'查看此券关联的发放、使用或状态记录。',
+ '状态':'该条业务当前所处的状态；需要结合本表的记录类型理解。',
+ '券种 / 来源':'券种决定可以抵扣的广告权益，来源说明这张券因何发放。',
+ '批次 / 到期':'邀请券15天过期；首次会员赠券1个自然月过期，会员日券印度当日过期；返券保留原到期时间，过期不补发。',
+ '关联业务':'该记录对应的邀请关系、会员发券或本次权益使用记录。',
+ '用户 / 商品':'关联会员用户和支付平台中的实际商品或套餐。',
+ '实收金额':'真实订单的到账金额和币种，未接入数据时不把未知金额写成 0。',
+ '权威状态':'服务端向支付平台核验的会员或订单状态，不能凭页面显示认定支付成功。',
+ '有效期':'本次已核验会员权益的开始和截止时间，实际记录尚待接入。',
+ '用户':'提交这条反馈的用户；未接入真实账号时保留占位。',
+ '用户ID':window.USER_IDENTITY?.help||'系统分配的固定用户ID，用于关联本次生成任务。',
+ '生成结果':'用户反馈的原生成结果，点击图片可放大。直接生成失败且没有结果时显示“未生成图片”。',
+ '模板':'这次生成任务使用的模板名称，可与账号一起用于搜索。',
+ '生成时间':'发生问题的原生成任务的创建时间，生成失败时也保留任务时间。',
+ '是否重试':'这条反馈之后是否已经发起过对应的重试任务，只展示是或否。',
+ '剩余重试次数':'提交这条反馈时，该账号在当天剩余的免广告重做次数快照，格式为剩余次数/每日总额度2次。1/2表示提交时还剩1次；反馈提交不扣次数，实际开始重做才扣。该记录不随后续重做或印度时间跨天变化。',
+ '反馈时间':'用户提交这条反馈的时间，也是顶部时间范围的筛选依据；本页时间均为明确标记的示例。',
+ '详情':'查看账号、生成结果、模板、问题类型、两个时间、是否重试及提交时剩余重试次数，不增加人工处理状态。',
+ '反馈 / 用户':'对应反馈编号及提交反馈的用户，用于查找原制作任务。',
+ '模板 / 原任务':'发生效果问题的模板及原制作任务，供定位结果和重试关联。',
+ '问题类型':'人物异常、效果不符、内容缺失、生成失败、其他；其他提供输入框，生成失败结果页也能反馈。',
+ '处理状态':'3D图片拆解的未处理、处理中、成功或失败状态；本地只模拟流程。',
+ '关联重试':'记录反馈对应的原任务和免广告重试任务；每日最多 2 次是内部规则。',
+ '封面 / 标题':'App 壁纸列表中的预览封面和展示名称；正式资源与名称尚待提供。',
+ '类型':'静态、视频、3D三种壁纸；静态设置 1 次，视频或保留3D设置 2 次激励广告，通用券可抵。',
+ '资源 / 版本':'对应壁纸底图、装饰资源及资源版本，用于获取本次选中的内容。',
+ '排序 / 状态':'排序控制 App 列表位置，状态控制是否供新选用；已设置的本地资源不因下架而失效。',
+ '位置':'业务事件的触发位置；范围已定，整体优先级最低。',
+ '记录什么':'事件关联的业务字段，不表示已经存在真实统计数据。',
+ '为什么':'记录该业务事件后希望回答的产品或运营问题。',
+ '权益 / 广告位':'本次需要解锁的功能及其对应的广告规则。',
+ '所需激励广告':'解锁本次权益需要完成的激励广告次数，壁纸每次设置重新计算。',
+ '可用券':'用户可以主动选择的抵扣券种；去水印专用券仅用于去水印。',
+ '会员规则':'会员仍按券或激励广告解锁这些权益，不自动免除全部激励广告。',
+ '邀请绑定':'查找邀请关系编号及适用规则版本。',
+ '去重结果':'核对同一个好友的同一阶段是否已经发过奖励，避免重复发券。',
+ '生命周期':'核对券从发放到使用、释放或返还的状态记录，并保留原券种、批次与期限。',
+ '订单':'实际支付平台订单和商品的关联记录，演示不伪造交易号。',
+ '权益版本':'本次资格或会员权益适用的规则版本，用于核对历史承诺。',
+ '日券记录':'每天自动发 3 张通用券，印度当日过期；Asia/Kolkata 每天 00:00 日切并去重。',
+ '用户补充':'用户提交的选填文字说明，演示等待真实反馈内容。',
+ '原模板 / 原素材':'原制作任务所用的模板和照片关联，供符合条件时沿用原内容重试。',
+ '原任务 / 结果':'发生反馈的原制作任务及其输出结果。',
+ '模型与成本':'关联模型版本、调用结果及实际成本，未接入成本时保留待补。',
+ '预览资源':'查看本次资源的预览；当前为占位，不代表正式壁纸文件。',
+ '设置方式':'静态每次 1 次，视频或保留3D每次 2 次激励广告，可用通用券抵扣；需支持桌面、锁屏，系统兼容性由开发验证。',
+ '重复设置':'每次新的成功设置重新结算；取消或设置失败保留本次已取得资格，下次重试不重复消耗。',
+ '透明素材':'用于叠加到用户照片上的装饰素材资源；正式文件尚待提供。',
+ '使用方式':'App 用户照片可跨分类叠加多个装饰素材；官方3D壁纸另在后台上传图片，由程序自动拆解为 3D。'
+};
+const H=(label,help='')=>{const meaning=help||FIELD_MEANINGS[label]||'此处含义尚待补充，保留原字段。';const state=/待确认|尚未|待提供|待补|建议|未(?:最终)?确定|未批准|待接入/.test(meaning)?'待确认':'已确认';return `data-help="${E(meaning)}" data-help-title="${E(label)}" data-help-status="${state}"`;};
+const ACTION_MEANINGS={
+ '查询':'按当前条件查找本地示例记录，未连接真实后台。',
+ '重置':'清空本页查询条件并恢复默认筛选。',
+ '保存草稿':'保留当前本地配置草稿，不发布到线上后台。',
+ '校验并发布':'完成资源及名称后发布本地示例；3D资源须先处理成功，实际内容不发布到线上。',
+ '翻译检查':'维护当前内容的原文与目标语言翻译。演示不新增真实语言或修改线上文案。',
+ '查看邀请记录':'进入两阶段邀请进度与发券凭证查询。',
+ '查看会员订单':'进入会员订单核验状态、有效期及每日发券记录查询。',
+ '新增壁纸':'填写名称、类型、分类和资源；3D上传图片后由程序自动拆解，当前仅本地模拟。',
+ '新增素材':'填写装饰素材名称、所属分类及资源，当前仅本地演示。',
+ '管理分类':'维护 App 装饰素材的分类名称；正式分类名称尚待提供。',
+ '预览效果':'查看当前内容预览，正式壁纸资源尚待提供。',
+ '返回列表':'返回壁纸管理列表。',
+ '查看凭证':'查看对应邀请关系的绑定、注册奖励、广告和保存凭证。',
+ '查看详情':'查看此条记录的关联业务详情。',
+ '发放记录':'查看此券的来源、发放批次、到期时间和关联业务。',
+ '核销记录':'查看此券被用于哪次权益解锁及其使用状态。',
+ '冻结记录':'查看此券与正在处理的权益使用记录的关联。',
+ '查看核验':'查看实际支付平台订单与服务端核验结果。',
+ '查看同步':'查看尚未核验完成的订单状态与同步入口。',
+ '查看历史':'查看这条会员订单原有核验与有效期记录。',
+ '编辑':'编辑当前内容的本地副本，不修改线上已有数据。',
+ '预览':'查看当前行资源的本地预览。',
+ '下架':'本地演示此内容停止供新选用，不修改线上数据；已设置的本地资源保留。',
+ '检查':'查看此资源发布前需要核对的内容。'
+};
+const bt=(label,action,primary=false,help='')=>`<button type="button" data-an="${E(action)}" class="${primary?'an-primary':''}" ${H(label,help||ACTION_MEANINGS[label]||'本地演示操作：'+label+'；不会提交到线上后台。')}>${E(label)}</button>`;
+const link=(label,action)=>`<button type="button" class="an-link" data-an="${E(action)}" ${H(label,ACTION_MEANINGS[label]||'查看此记录的'+label+'内容。')}>${E(label)}</button>`;
+const pending=t=>`<span class="an-pending">待确认：${E(t)}</span>`;
+function field(label,value='',help='',options={}){let control;if(options.select)control=`<select ${H(label,help)}>${options.select.map(x=>`<option ${x===value?'selected':''}>${E(x)}</option>`).join('')}</select>`;else if(options.textarea)control=`<textarea ${H(label,help)} placeholder="${E(options.placeholder||'')}">${E(value)}</textarea>`;else if(options.html)control=value;else control=`<input ${H(label,help)} value="${E(value)}" placeholder="${E(options.placeholder||'')}" ${options.readonly?'readonly':''}>`;return `<label class="an-field ${options.full?'an-full':''}"><span ${H(label,help)}>${E(label)}</span>${control}${options.note?`<small>${E(options.note)}</small>`:''}</label>`;}
+function section(title,content){return `<section class="an-section"><h2>${E(title)}</h2>${content}</section>`;}
+function table(headers,rows,helps={}){const meaning=x=>helps[x]||FIELD_MEANINGS[x]||'此字段的业务含义尚待补充。';return `<div class="an-table-wrap"><table><thead><tr>${headers.map(x=>`<th ${H(x,meaning(x))}>${E(x)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((cell,i)=>`<td ${H(headers[i],meaning(headers[i]))}>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
+function checks(items,help=''){return `<div class="an-checks">${items.map(([text,on])=>`<label><input type="checkbox" ${on?'checked':''} ${H(text,help||text+'的展示配置。')}><span>${E(text)}</span></label>`).join('')}</div>`;}
+function filter(hint,options=[]){return `<div class="an-filter"><input aria-label="查询条件" placeholder="${E(hint)}" ${H('查询条件','按填写的条件筛选本地示例；没有接入真实后台。')}>${options.map(o=>`<select aria-label="${E(o[0])}" ${H(o[0],o[0]+'筛选。')}><option>全部${E(o[0])}</option>${o.slice(1).map(v=>`<option>${E(v)}</option>`).join('')}</select>`).join('')}${bt('查询','query',true)}${bt('重置','reset')}</div>`;}
+function actions(publish=true){return `<div class="an-actions">${bt('保存草稿','draft')}${publish?bt('校验并发布','publish',true):''}<span class="an-note">仅本地演示，不写入线上后台。</span></div>`;}
+function memberNavigate(key,root){if(key==='ads-member'){nav('ads',root);window.AD_CONFIG?.render(root,'member');}else nav(key,root);}
+function nav(key,root){if(typeof API.onNavigate==='function')API.onNavigate(key);else render(key,root);}
+function notify(root,text){let box=root.querySelector('.an-status');if(!box){box=document.createElement('div');box.className='an-status';box.setAttribute('role','status');root.prepend(box);}box.textContent=text;}
+function modal(root,title,content){const mask=document.createElement('div');mask.className='an-modal-mask';mask.innerHTML=`<div class="an-modal" role="dialog" aria-label="${E(title)}"><button class="an-close" aria-label="关闭">×</button><h2>${E(title)}</h2>${content}</div>`;mask.addEventListener('click',e=>{if(e.target===mask||e.target.closest('.an-close'))mask.remove();});root.append(mask);return mask;}
+function translate(root){modal(root,'翻译检查',`<p class="an-note">语言及文案为本地演示，正式内容待补充。</p><div class="an-form">${field('原文','', '用于对应本条内容的原语言文案。',{full:true,placeholder:'填写原文'})}${field('目标语言','', '选择后台已启用或待编辑的语言；此处不新增语言。',{placeholder:'语言名称'})}${field('翻译内容','', '本条内容在目标语言下的展示文案。',{textarea:true,full:true})}</div><div class="an-actions">${bt('保存本地文案','translation-save',true)}</div>`);}
+function detail(root,title,rows,extra=''){modal(root,title,rows.map(([a,b])=>`<div class="an-detail"><span ${H(a,FIELD_MEANINGS[a]||'此记录的具体含义尚待补充。')}>${E(a)}</span><span ${H(a,FIELD_MEANINGS[a]||'此记录的具体含义尚待补充。')}>${b}</span></div>`).join('')+extra);}
+function member(){return `<div class="an-form">${field('月付会员价格','xx','月付价格以正式Google Play结账核验为准。')}${field('年付会员价格','xx','年付价格以正式Google Play结账核验为准。')}${field('每月赠券数量','30','月付每期付款、年付每月开通日发放；每批到次月同日到期。')}${field('每日赠券数量','3','有效会员每天发放，印度当日有效。')}</div><div class="an-actions">${bt('保存','save',true)}</div>`;}
+function orders(){return filter('账号 / 订单号 / 商品 / 日期',[['订单状态','有效','待处理','已到期','已撤销']])+table(['用户 / 商品','实收金额','权威状态','有效期','操作'],[['账号 — / 商品 —','金额 — / 币种 —','有效','起止日期 —',link('查看核验','order-detail')],['账号 — / 商品 —','金额 — / 币种 —','待处理','未生效',link('查看同步','order-detail')],['账号 — / 商品 —','金额 — / 币种 —','已到期 / 撤销','截止日期 —',link('查看历史','order-detail')]],{'权威状态':'以服务端向支付平台核验的结果为准，不能由人工改日期直接生效。','实收金额':'真实订单金额和币种；没有数据时保持待补，不能虚报收入。'})+`<p class="an-note">支付待处理或取消不发权益；恢复购买、重复回调和日发券分别去重。</p>`;}
+const FEEDBACK_TYPES=['人物异常','效果不符','内容缺失','生成失败','其他'];
+const feedbackExamples=[
+ {id:'demo-feedback-01',retryRemainingAtFeedback:1,account:'user-demo01',template:'婚礼示例模板 A',type:'人物异常',image:'assets/admin-template-1.png',feedbackAt:'2026-11-17T10:30',generatedAt:'2026-11-17T10:24',retried:true,note:'本地示例：用于展示用户对人物效果的反馈。'},
+ {id:'demo-feedback-02',retryRemainingAtFeedback:2,account:'user-demo02',template:'节日示例模板 B',type:'效果不符',image:'assets/admin-template-2.png',feedbackAt:'2026-11-17T09:10',generatedAt:'2026-11-17T09:03',retried:false,note:'本地示例：用于展示效果与预期不符的反馈。'},
+ {id:'demo-feedback-03',retryRemainingAtFeedback:2,account:'user-demo03',template:'婚礼示例模板 A',type:'生成失败',image:'',feedbackAt:'2026-11-16T17:20',generatedAt:'2026-11-16T17:12',retried:true,note:'本地示例：本次任务直接生成失败，没有结果图片。'},
+ {id:'demo-feedback-04',retryRemainingAtFeedback:0,account:'user-demo04',template:'相框示例模板 C',type:'内容缺失',image:'assets/admin-template-4.png',feedbackAt:'2026-11-16T14:45',generatedAt:'2026-11-16T14:39',retried:false,note:'本地示例：用于展示用户反馈内容缺失。'},
+ {id:'demo-feedback-05',retryRemainingAtFeedback:1,account:'user-demo05',template:'写真示例模板 D',type:'其他',image:'assets/admin-template-3.png',feedbackAt:'2026-11-15T11:05',generatedAt:'2026-11-15T10:58',retried:false,note:'本地示例：其他问题的用户补充说明。'}
+];
+let feedbackFilters={keyword:'',type:'',start:'',end:''};
+function matchFeedback(rows,filters){const keyword=String(filters.keyword||'').trim().toLocaleLowerCase();return rows.filter(row=>(!keyword||String(window.USER_IDENTITY?.id(row.account)??row.account).toLocaleLowerCase().includes(keyword)||row.template.toLocaleLowerCase().includes(keyword))&&(!filters.type||row.type===filters.type)&&(!filters.start||row.feedbackAt>=filters.start)&&(!filters.end||row.feedbackAt<=filters.end));}
+const feedbackTime=value=>String(value||'—').replace('T',' ');
+const feedbackRetryRemaining=row=>Number.isInteger(row.retryRemainingAtFeedback)&&row.retryRemainingAtFeedback>=0&&row.retryRemainingAtFeedback<=2?row.retryRemainingAtFeedback+'/2':'未记录';
+function feedbackImage(row,large=false){if(!row.image)return '<div class="an-feedback-no-image">未生成图片</div>';if(large)return `<figure class="an-feedback-large"><img src="${E(row.image)}" alt="本地示例生成结果，非真实用户反馈图片"><figcaption>本地示例图，用于展示生成结果的预览方式</figcaption></figure>`;return `<button type="button" class="an-feedback-thumb" data-an="feedback-image" data-feedback-id="${E(row.id)}" ${H('生成结果预览','点击放大本条生成结果。当前图片为本地示例，不是真实用户反馈的失败图片。')}><img src="${E(row.image)}" alt="本地示例生成结果"><small>示例图</small></button>`;}
+function feedback(){const f=feedbackFilters,rows=matchFeedback(feedbackExamples,f);return `<div class="an-feedback-filters"><label class="an-field"><span ${H('问题类型','选择问题类型，与反馈时间范围、账号或模板关键词同时筛选。')}>问题类型</span><select aria-label="反馈问题类型" data-af-filter="type" ${H('问题类型','只显示选中的问题类型；留空显示全部。')}><option value="">全部问题类型</option>${FEEDBACK_TYPES.map(type=>`<option ${type===f.type?'selected':''}>${E(type)}</option>`).join('')}</select></label><label class="an-field"><span ${H('反馈时间起','只显示在起始时间之后提交的反馈，包含该时间。')}>反馈时间（起）</span><input type="datetime-local" aria-label="反馈开始时间" data-af-filter="start" value="${E(f.start)}" ${H('反馈时间起','按用户提交反馈的时间筛选，不按生成时间筛选。')}></label><label class="an-field"><span ${H('反馈时间止','只显示在结束时间之前提交的反馈，包含该时间。')}>反馈时间（止）</span><input type="datetime-local" aria-label="反馈结束时间" data-af-filter="end" value="${E(f.end)}" ${H('反馈时间止','与起始时间一起组成反馈时间范围。')}></label><label class="an-field an-feedback-search"><span ${H('搜索账号或模板','同一关键词可匹配用户账号或模板名称，并与其他筛选条件同时生效。')}>搜索用户ID / 模板</span><input aria-label="搜索反馈账号或模板" data-af-filter="keyword" value="${E(f.keyword)}" placeholder="输入用户ID或模板名称" ${H('搜索账号或模板','在用户账号和模板名称中查找输入的关键词。')}></label><div class="an-feedback-filter-actions">${bt('查询','feedback-query',true)}${bt('重置','feedback-reset')}</div></div><p class="an-note an-feedback-example-note">以下为本地示例账号、时间及图片，用于演示筛选和预览；时间按印度时间展示。</p><p class="an-feedback-count">共 ${rows.length} 条</p>`+table(['用户ID','生成结果','模板','问题类型','生成时间','反馈时间','是否重试','剩余重试次数','详情'],rows.map(row=>[`<strong>${E(window.USER_IDENTITY?.id(row.account)??row.account)}</strong>`,feedbackImage(row),E(row.template),E(row.type),`<span class="an-feedback-time">${E(feedbackTime(row.generatedAt))}</span>`,`<span class="an-feedback-time">${E(feedbackTime(row.feedbackAt))}</span>`,row.retried?'是':'否',`<span class="an-feedback-retry-quota" ${H('剩余重试次数',FIELD_MEANINGS['剩余重试次数'])}>${E(feedbackRetryRemaining(row))}</span>`, `<button type="button" class="an-link" data-an="feedback-detail" data-feedback-id="${E(row.id)}" ${H('查看用户反馈详情','查看这条反馈的账号、原生成结果、模板、时间、问题类型、是否重试及提交时剩余额度。')}>查看详情</button>`]))+(rows.length?'':'<p class="an-feedback-empty">没有符合条件的用户反馈</p>');}
+function queryFeedback(root,content){const next={keyword:'',type:'',start:'',end:''};for(const input of content.querySelectorAll('[data-af-filter]'))next[input.dataset.afFilter]=input.value.trim();if(next.start&&next.end&&next.start>next.end){notify(root,'反馈结束时间不能早于开始时间。');return;}feedbackFilters=next;content.innerHTML=feedback();notify(root,'已按问题类型、反馈时间和账号／模板关键词组合筛选。');}
+function feedbackDetail(root,id){const row=feedbackExamples.find(item=>item.id===id);if(!row)return;detail(root,'用户反馈详情',[['用户ID',E(window.USER_IDENTITY?.id(row.account)??row.account)],['生成结果',feedbackImage(row,true)],['模板',E(row.template)],['问题类型',E(row.type)],['生成时间',E(feedbackTime(row.generatedAt))],['反馈时间',E(feedbackTime(row.feedbackAt))],['是否重试',row.retried?'是':'否'],['剩余重试次数',E(feedbackRetryRemaining(row))],['用户补充',E(row.note)]]);}
+let wallpaperDraft={id:null,type:'静态',name:'',category:'',fileName:'',url:'',process:'未处理'};
+let wallpaperItems=[{id:'sample-static',type:'静态',name:'名称占位',category:'分类占位',state:'草稿',fileName:'',url:''},{id:'sample-motion',type:'体感',name:'名称占位',category:'分类占位',state:'已上架',fileName:'',url:''},{id:'sample-motion-off',type:'体感',name:'名称占位',category:'分类占位',state:'已下架',fileName:'',url:''},{id:'sample-video',type:'视频',name:'名称占位',category:'分类占位',state:'草稿',fileName:'',url:''}];
+function wallpapers(){return filter('壁纸名称',[['壁纸类型','静态','视频','体感'],['状态','草稿','已上架','已下架']])+`<div class="an-actions">${bt('新增壁纸','wallpaper-new',true)}</div>`+table(['壁纸名称','类型','分类','状态','操作'],wallpaperItems.map(x=>[E(x.name),E(x.type),E(x.category||'—'),E(x.state),`<button type="button" class="an-link" data-an="wallpaper-edit" data-id="${E(x.id)}" ${H('编辑','编辑本条壁纸，文件仅在本次浏览器会话中预览。')}>编辑</button><button type="button" class="an-link" data-an="wallpaper-item-preview" data-id="${E(x.id)}" ${H('预览','查看本条壁纸资源；体感拆解效果仅本地流程模拟。')}>预览</button>${x.state==='已上架'?`<button type="button" class="an-link" data-an="wallpaper-item-off" data-id="${E(x.id)}" ${H('下架','从本地列表下架，不修改线上数据。')}>下架</button>`:''}`]),{'壁纸名称':'由运营自己填写的 App 壁纸名称。','类型':FIELD_MEANINGS['类型'],'分类':'由运营定义壁纸分类名称。','状态':'草稿、已上架或已下架，控制是否供用户新选用。'})+`<p class="an-note">只支持设为壁纸，不提供下载。3D壁纸在后台上传图片，由程序自动拆解为 3D；用户自定义照片仍可叠加装饰素材。</p>`;}
+function wallpaperEdit(){const d=wallpaperDraft;return `<div class="an-form">${field('壁纸类型',d.type,'静态上传图片；视频上传视频；体感上传图片，再由程序自动拆解为 3D。',{select:['静态','视频','体感']})}${field('壁纸名称',d.name,'App 展示名称由你填写，并维护对应翻译。',{placeholder:'填写名称'})}${field('上传壁纸',bt(d.fileName?'更换壁纸文件':'选择壁纸文件','file-wallpaper',false,'静态和体感选择图片，视频选择视频；文件仅用于本地预览，不上传。')+`<small class="an-file-name">${E(d.fileName||'未选择文件')}</small>`,'上传图片或视频；体感不需要人工提供前景、中景、后景文件。',{html:true})}</div>${d.type==='体感'?section('图片自动拆解为 3D',`<div class="an-process" ${H('处理状态','未处理、处理中、成功或失败。正式程序自动拆解图片，演示只模拟流程；处理成功后才能发布。')}>处理状态：${E(d.process)}</div><div class="an-actions">${bt('开始拆解','wallpaper-process',true)}${bt('模拟处理失败','wallpaper-process-fail')}</div><p class="an-note">本地只演示处理步骤，不生成真实 3D。实际拆解、桌面与锁屏兼容性由开发实现并验证。</p>`):''}<div class="an-actions">${bt('翻译检查','translation')}${bt('预览效果','wallpaper-preview')}${bt('返回列表','go-wallpapers')}</div>${actions()}`;}
+function readWallpaperDraft(root){for(const label of root.querySelectorAll('.an-content .an-field')){const name=label.querySelector('span')?.textContent;const input=label.querySelector('input,select');if(!input)continue;if(name==='壁纸类型')wallpaperDraft.type=input.value;if(name==='壁纸名称')wallpaperDraft.name=input.value.trim();if(name==='壁纸分类')wallpaperDraft.category=input.value.trim();}}
+function refreshWallpaper(root){root.querySelector('.an-content').innerHTML=wallpaperEdit();}
+function previewWallpaper(root,item=wallpaperDraft){detail(root,'壁纸预览',[['预览资源',item.url?(item.type==='视频'?`<video class="an-wallpaper-media" src="${E(item.url)}" controls loop muted playsinline></video>`:`<img class="an-wallpaper-media" src="${E(item.url)}" alt="${E(item.name||'壁纸预览')}">`):'<div class="an-preview">未选择资源</div>'],['设置方式','静态 1 次；视频或保留3D动效 2 次激励广告，通用券可抵。支持桌面、锁屏。'],['重复设置','新的成功设置重新结算；主动取消设置时本次资格作废；设置失败保留本次资格。']],item.type==='体感'?'<p class="an-note">此处只预览上传图片；3D 拆解为本地流程模拟。</p>':'');}
+function materials(){const active=materialCategories.find(x=>x.id===activeMaterialCategory)||materialCategories[0];activeMaterialCategory=active.id;return `<p class="an-note">照片生成3D壁纸已改为上传照片后自动拆层，App不再提供装饰素材选择。本页保留旧版素材记录，入口暂不开放。</p><div class="an-tabs">${materialCategories.map(cat=>`<button class="${cat.id===active.id?'active':''}" data-an="material-tab" data-category="${E(cat.id)}" ${H('素材分类',cat.name+'：切换该分类下的素材列表。')}>${E(cat.name)}</button>`).join('')}${bt('管理分类','material-categories')}</div><div class="an-actions">${bt('新增素材','material-edit',true)}</div><div class="an-materials">${Array.from({length:active.materialCount},(_,i)=>`<article class="an-material-card"><div class="an-preview" ${H('装饰素材缩略图','App 素材选择区对应的透明装饰素材缩略图；此处为占位，正式文件尚待提供。')}>透明素材 ${E(active.name)} ${i+1}</div><p>素材名称占位 ${i+1}</p><span class="an-tag">状态占位</span><div class="an-actions">${link('编辑','material-edit')}${link('预览','material-preview')}</div></article>`).join('')}</div>${active.materialCount?'':'<p class="an-note">此分类暂无素材。</p>'}<div class="an-actions">${bt('翻译检查','translation')}</div>`;}
+const events=[
+ ['封面曝光 · template_impression','50%可见连续1秒，同轮次同模板一次；快速点击可先补曝光','得到本模板的展示人数'],
+ ['封面点击 · template_click','真实封面点击，关联曝光编号和本次流程','得到本模板的点击人数和点击率'],
+ ['保存成功 · template_save_success','真实相册成功回报，关联原点击、曝光和任务；原型仅模拟','得到本模板的保存人数和点击后保存率'],
+ ['壁纸曝光 · wallpaper_impression','与模板相同可见及去重条件','得到本壁纸的曝光人数'],
+ ['壁纸点击 · wallpaper_click','真实封面点击，关联壁纸曝光和流程','得到本壁纸的点击人数'],
+ ['壁纸设置成功 · wallpaper_set_success','明确系统成功回报才记，失败/取消/未知不记','得到本壁纸的设置人数及点击后设置率']
+];
+function eventList(){return table(['位置','记录什么','为什么'],events)+section('统计口径','<p>模板和壁纸各三个事件，分别按内容ID逐行统计，不显示风格。按曝光日及原曝光24小时窗口关联，印度标准时间划日；界面只显示本地演示记录，公式样例仅用于文档和测试。真实采集尚未接入。</p>');}
+function adRules(){return table(['权益 / 广告位','所需激励广告','可用券','会员规则'],[['VIP体验','额外2次，必须实际完成','不可用券','有效VIP跳过；普通用户模板、壁纸合计每天2次，登录后体验'],['高清保存','1 次','通用券','有券可选用，用完仍看广告'],['超清保存','2 次','通用券，可 2 张全抵或 1 张 + 1 次广告','有券可选用，用完仍看广告'],['去水印','1 次','通用券 / 去水印专用券','有券可选用，用完仍看广告'],['静态壁纸设置','每次 1 次','通用券','每次新的成功设置重新结算'],['保留3D动效设置','每次 2 次','通用券','主动取消作废；设置失败保留本次资格'],['视频壁纸设置','每次 2 次','通用券','主动取消作废；设置失败保留本次资格'],['普通保存','继续限免','无需券','继续限免']],{'所需激励广告':'静态 1 次、3D或视频 2 次。每次新的成功设置重新结算；主动取消作废；设置失败保留本次资格。','可用券':'用户主动选择用券，优先用快过期的；去水印专用券仅用于去水印。'})+section('会员和广告开关','<p>会员默认关闭插页、底部 Banner，开屏和原生广告默认正常显示，具体以独立会员广告配置为准。保存等普通激励权益仍按券或广告解锁。</p><p>后台关闭某个激励广告位后，对应功能免费，不消耗券，也不关闭功能。</p>')+section('保存失败与返券','<p>高清、超清保存失败返还本次使用的券，保留原券种和原到期时间；已经过期的券保持过期，不延期、不补发。未完成的广告进度不保留。</p>')+section('邀请发券规则','<p>好友通过链接绑定并注册：只给邀请人1张去水印券。好友首次实际看激励广告并完成高清保存后，双方各得1张通用券；用券免广告或普通免费保存不触发。</p><p>印度每天 00:00 重置，每天最多 5 位新注册好友获得奖励资格。第二阶段可跨天完成，不占新一天的名额。邀请获得的券自发放起15天过期。</p>');}
+function render(key,root){if(key==='admin-wallpaper-stats'&&window.TEMPLATE_METRICS)return window.TEMPLATE_METRICS.render(root,'wallpaper');if(key==='admin-template-stats'&&window.TEMPLATE_METRICS)return window.TEMPLATE_METRICS.render(root);if(key==='admin-new-member'&&window.MEMBER_CONFIG){window.MEMBER_CONFIG.onNavigate=k=>memberNavigate(k,root);return window.MEMBER_CONFIG.render(root);}if(key==='admin-new-member-orders'&&window.MEMBER_ORDERS){window.MEMBER_ORDERS.onNavigate=k=>memberNavigate(k,root);window.MEMBER_ORDERS.onCouponRecords=account=>{nav('admin-new-coupon-records',root);window.COUPON_RECORDS?.openAccount(root,account);};return window.MEMBER_ORDERS.render(root);}if(key==='admin-new-coupon-records'&&window.COUPON_RECORDS)return window.COUPON_RECORDS.render(root);if(key==='admin-new-wallpapers'&&window.WALLPAPER_EDITOR){window.WALLPAPER_EDITOR.onNavigate=k=>nav(k,root);return window.WALLPAPER_EDITOR.renderList(root);}const info=screens.find(x=>x.key===key);if(!info)return false;root.classList.add('admin-new');root.innerHTML=`<h1>${E(info.title)}</h1><p class="an-intro">${E(info.section)} · 新增需求演示；右键字段可查看含义。</p><div class="an-status" role="status"></div><div class="an-content"></div>`;const content=root.querySelector('.an-content');content.innerHTML=({'admin-new-member':member,'admin-new-member-orders':orders,'admin-new-feedback':feedback,'admin-new-wallpapers':wallpapers,'admin-new-wallpaper-edit':wallpaperEdit,'admin-new-materials':materials,'admin-new-events':eventList,'admin-new-ad-rules':adRules}[key])();root.onchange=e=>{if(key==='admin-new-wallpaper-edit'&&e.target.matches('select[data-help-title="壁纸类型"]')){readWallpaperDraft(root);wallpaperDraft.fileName='';wallpaperDraft.url='';wallpaperDraft.process='未处理';refreshWallpaper(root);}};root.onclick=e=>{const b=e.target.closest('[data-an]');if(!b||!root.contains(b))return;const a=b.dataset.an;if(a==='feedback-query'){queryFeedback(root,content);return;}if(a==='feedback-reset'){feedbackFilters={keyword:'',type:'',start:'',end:''};content.innerHTML=feedback();notify(root,'已重置用户反馈筛选。');return;}if(a==='feedback-image'){const row=feedbackExamples.find(item=>item.id===b.dataset.feedbackId);if(row)modal(root,'生成结果预览',feedbackImage(row,true));return;}if(a==='wallpaper-new'){window.ADMIN_UI.startWallpaperCreation();return;}if(a==='wallpaper-edit'){const item=wallpaperItems.find(x=>x.id===b.dataset.id);wallpaperDraft={...item,process:item?.process||(item?.type==='体感'&&item?.state==='已上架'?'处理成功':'未处理')};nav('admin-new-wallpaper-edit',root);return;}if(a==='wallpaper-item-off'){const item=wallpaperItems.find(x=>x.id===b.dataset.id);if(item)item.state='已下架';content.innerHTML=wallpapers();notify(root,'已在本地示例下架，没有修改线上数据。');return;}if(a==='wallpaper-item-preview'){previewWallpaper(root,wallpaperItems.find(x=>x.id===b.dataset.id));return;}if(a==='file-wallpaper'){readWallpaperDraft(root);const input=document.createElement('input');input.type='file';input.accept=wallpaperDraft.type==='视频'?'video/*':'image/*';input.onchange=()=>{const file=input.files?.[0];if(!file)return;const valid=wallpaperDraft.type==='视频'?file.type.startsWith('video/'):file.type.startsWith('image/');if(!valid){notify(root,'请选择对应类型的图片或视频。');return;}wallpaperDraft.fileName=file.name;wallpaperDraft.url=URL.createObjectURL(file);wallpaperDraft.process='未处理';refreshWallpaper(root);notify(root,'文件已选择，仅在本地预览，没有上传。');};input.click();return;}if(a==='wallpaper-process'||a==='wallpaper-process-fail'){readWallpaperDraft(root);if(!wallpaperDraft.fileName){notify(root,'请先选择3D壁纸图片。');return;}if(a==='wallpaper-process-fail'){wallpaperDraft.process='处理失败，可重新拆解';refreshWallpaper(root);return;}wallpaperDraft.process='处理中（本地模拟）';refreshWallpaper(root);const processingDraft=wallpaperDraft;setTimeout(()=>{processingDraft.process='处理成功（本地模拟）';if(wallpaperDraft===processingDraft&&root.querySelector('.an-process'))refreshWallpaper(root);},900);return;}if(a==='wallpaper-preview'){readWallpaperDraft(root);previewWallpaper(root);return;}if((a==='draft'||a==='publish')&&key==='admin-new-wallpaper-edit'){readWallpaperDraft(root);if(!wallpaperDraft.name){notify(root,'请填写壁纸名称。');return;}if(a==='publish'&&!wallpaperDraft.fileName){notify(root,'请先选择壁纸文件后再发布。');return;}if(a==='publish'&&wallpaperDraft.type==='体感'&&!wallpaperDraft.process.startsWith('处理成功')){notify(root,'体感图片处理成功后才可发布。');return;}wallpaperDraft.id=wallpaperDraft.id||'local-'+Date.now();const item={...wallpaperDraft,state:a==='publish'?'已上架':'草稿'};const i=wallpaperItems.findIndex(x=>x.id===item.id);if(i<0)wallpaperItems.push(item);else wallpaperItems[i]=item;notify(root,a==='publish'?'已在本地示例上架，没有发布到线上。':'草稿已在本地会话保留。');return;}if(a.startsWith('go-')){const map={'go-member-orders':'admin-new-member-orders','go-wallpapers':'admin-new-wallpapers','go-wallpaper-edit':'admin-new-wallpaper-edit'};nav(map[a],root);return;}if(a==='query'){notify(root,'已按当前条件查询。本地仅展示结构示例，真实查询结果待接入。');return;}if(a==='reset'){for(const x of content.querySelectorAll('.an-filter input'))x.value='';for(const x of content.querySelectorAll('.an-filter select'))x.selectedIndex=0;notify(root,'已重置筛选条件。');return;}if(a==='draft'){notify(root,'草稿已在本页保留，仅本地演示；没有修改线上后台。');return;}if(a==='publish'){notify(root,'尚不能发布：正式资源、翻译及待确认参数未补齐。本演示不会发布到线上。');return;}if(a==='translation'){if(key==='admin-new-wallpaper-edit'){readWallpaperDraft(root);openWallpaperTranslation(root,wallpaperDraft,'wallpaper-edit');}else translate(root);return;}if(a==='cw-translation-save'){saveWallpaperTranslation(root,b,wallpaperDraft);return;}if(a==='translation-save'){b.closest('.an-modal-mask')?.remove();notify(root,'翻译内容已在本地演示中确认，未写入线上。');return;}if(a.startsWith('file-')){notify(root,'此处演示资源选择入口，尚未提供正式文件，不上传到线上。');return;}if(a==='invite-detail'){detail(root,'邀请关联凭证',[['邀请绑定','绑定 ID — / 规则版本 —'],['注册阶段','去水印专用券；发券批次 —'],['收益阶段','有效广告奖励回调 — / 广告完成及保存成功事件 —'],['去重结果','同好友每阶段只奖励一次；纯用券保存保持收益阶段待完成。']]);return;}if(a==='coupon-detail'){detail(root,'券记录',[['券种 / 来源','券种 — / 来源 —'],['批次 / 到期','批次 — / 到期 —'],['关联业务','权益订单 — / 邀请关系 —'],['生命周期','发放 → 冻结 → 核销 / 释放 / 返还；保留原券种和期限。']]);return;}if(a==='order-detail'){detail(root,'订单核验与每日发券',[['订单','Google Play 订单 — / 商品 —'],['权威状态','等待真实核验记录'],['权益版本','版本 — / 有效期 —'],['日券记录','业务日 — / 批次 — / 去重结果 —']],`<div class="an-actions">${bt('重新同步权威状态','order-sync',true)}</div>`);return;}if(a==='order-sync'){notify(root,'重新同步入口已触发；实际状态须由服务端向支付平台核验，本地不修改会员资格。');return;}if(a==='feedback-detail'){feedbackDetail(root,b.dataset.feedbackId);return;}if(a==='wallpaper-off'){notify(root,'本地演示：下架只影响新选用；实际数据未改变。');return;}if(a==='material-tab'){activeMaterialCategory=b.dataset.category;content.innerHTML=materials();return;}if(a==='material-categories'){categoryManager(root);return;}if(a==='category-add'){const rows=b.closest('.an-modal').querySelector('.an-category-rows');const id='category-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);rows.insertAdjacentHTML('beforeend',categoryRow({id,name:''}));rows.lastElementChild.querySelector('input').focus();return;}if(a==='category-delete'){const panel=b.closest('.an-modal');const row=b.closest('.an-category-row');const input=row.querySelector('[data-category-id]');const count=Number(input.dataset.materialCount)||0;const error=panel.querySelector('.an-category-error');if(count>0){error.textContent='此分类下有 '+count+' 个素材，不能删除。请先移走或删除素材，再删除分类。';return;}if(panel.querySelectorAll('.an-category-row').length<=1){error.textContent='至少保留一个分类，不能删除最后一个分类。';return;}row.remove();error.textContent='已从本次编辑中移除；点击“保存分类”后才会生效。关闭弹窗不会保存删除。';return;}if(a==='category-save'){const mask=b.closest('.an-modal-mask');const values=[...mask.querySelectorAll('[data-category-id]')].map(x=>({id:x.dataset.categoryId,name:x.value.trim(),materialCount:Number(x.dataset.materialCount)||0}));const error=mask.querySelector('.an-category-error');if(!values.length){error.textContent='至少保留一个分类。';return;}if(values.some(x=>!x.name)){error.textContent='请填写每个分类的名称后再保存。';return;}if(new Set(values.map(x=>x.name)).size!==values.length){error.textContent='分类名称重复，请修改后再保存。';return;}materialCategories=values;let stored=true;try{window.localStorage.setItem(CATEGORY_STORAGE,JSON.stringify(materialCategories));}catch{stored=false;}content.innerHTML=materials();mask.remove();notify(root,stored?'分类已保存，分类标签和素材所属分类选项已同步更新。':'分类已在本页更新；浏览器存储不可用，刷新后不会保留。');return;}if(a==='material-edit'){modal(root,'编辑装饰素材',`<div class="an-form">${field('素材名称','','App 素材名称，正式名称待提供。',{placeholder:'填写名称'})}${field('所属分类',materialCategories.find(x=>x.id===activeMaterialCategory)?.name||materialCategories[0].name,'一个分类下可有多个素材，App 可跨分类叠加选择。',{select:materialCategories.map(x=>x.name)})}${field('缩略图',bt('选择缩略图','file-thumb'),'素材选择面板中的缩略图。',{html:true})}${field('透明素材文件',bt('选择透明素材','file-material'),'用于与用户照片本地合成的透明素材。',{html:true})}${field('资源版本','','用于跟踪素材更新。',{placeholder:'V—'})}${field('启用状态','草稿','仅发布并验证可用的素材供 App 选择。',{select:['草稿','启用','停用']})}${field('效果预设与默认参数','方案待确认','固定效果、随动强度等参数方案未最终确定。',{readonly:true,full:true})}</div><div class="an-actions">${bt('翻译检查','translation')}${bt('预览素材','material-preview')}${bt('保存本地草稿','local-close',true)}</div>`);return;}if(a==='material-preview'){detail(root,'装饰素材预览',[['透明素材','<div class="an-preview">素材占位</div>'],['使用方式','用户照片在 App 本地合成，可跨分类叠加多个素材；官方3D壁纸另在后台上传图片自动拆解。']]);return;}if(a==='local-close'){b.closest('.an-modal-mask')?.remove();notify(root,'已确认本地示例，线上没有变更。');return;}};return true;}
+
+let creationDrafts={},currentCreation=null;
+function newCreationDraft(kind){return {id:null,kind,type:kind==='wallpaper3d'?'体感':'静态',name:'',fileName:'',url:'',stage:'upload',process:'未处理',translations:{},state:'草稿'};}
+function creationMedia(d){if(!d.url)return '<div class="cw-preview-empty">未选择文件</div>';return d.type==='视频'?`<video src="${E(d.url)}" controls loop muted playsinline aria-label="视频壁纸预览"></video>`:`<img src="${E(d.url)}" alt="上传的壁纸图片">`;}
+function renderCreation(root,kind,typeChoices){
+ if(window.WALLPAPER_EDITOR){window.WALLPAPER_EDITOR.onNavigate=k=>nav(k,root);return window.WALLPAPER_EDITOR.renderCreate(root,kind,typeChoices);}
+ const d=creationDrafts[kind]||(creationDrafts[kind]=newCreationDraft(kind));currentCreation=d;
+ const motion=kind==='wallpaper3d',steps=motion?['上传图片','系统自动拆分','命名与翻译']:['上传图片或视频','命名与翻译'];
+ const step=d.stage==='upload'?0:d.stage==='processing'?1:steps.length-1;
+ root.classList.add('admin-new','admin-wallpaper-creation');
+ const metadata=d.stage==='metadata',processing=d.stage==='processing';
+ root.innerHTML=`<h2>创建模板</h2><div class="admin-create-inset"><div class="admin-step-card cw-steps">${steps.map((label,i)=>`<div class="admin-create-step ${i===step?'active':''}"><span>${String(i+1).padStart(2,'0')}</span><b>${label}</b></div>`).join('')}</div><section class="admin-create-upload"><h3>模板类型</h3>${typeChoices}<p class="an-intro">${motion?'上传图片，系统拆分完成后，由你命名并维护翻译。':'上传图片或视频后，填写名称并维护翻译。'}</p><div class="an-status" role="status"></div><div class="cw-body">${d.stage==='upload'?`<div class="cw-drop" data-cw-drop ${H(motion?'上传3D壁纸原图':'上传壁纸','只在本地选择文件，不会上传或改动真实后台。')}><span>☁</span><strong>${motion?'上传一张图片':'上传图片或视频'}</strong><p>点击选择，或拖拽文件到这里</p>${bt(motion?'选择图片':'选择图片或视频','cw-file',true)}</div>`:`<div class="cw-media-row"><div class="cw-media">${creationMedia(d)}</div><div class="cw-media-info"><strong>${E(d.fileName)}</strong><p>${E(d.type==='体感'?'3D壁纸':d.type+'壁纸')}</p>${!processing?bt('重新上传','cw-file'):''}${motion?`<p class="cw-process" role="status" ${H('自动拆分','系统自动拆分图片，成功后才显示名称与翻译。本地只模拟步骤，预览为上传原图。')}>${processing?'系统正在自动拆分图片…':d.stage==='failed'?'拆分失败，请重新上传或重试。':'拆分完成，可以命名与维护翻译。'}</p>`:''}${d.stage==='failed'?bt('重新拆分','cw-process',true):''}</div></div>`}${metadata?`<div class="cw-metadata">${field('壁纸名称',d.name,'由你填写，在 App 中显示的壁纸名称。',{placeholder:'填写壁纸名称',full:true})}<div class="an-actions">${bt('翻译检查','cw-translation')}<span class="an-note cw-translation-count">已维护 ${Object.keys(d.translations||{}).length} 种翻译</span></div><div class="an-actions">${bt('保存草稿','cw-draft')}${bt('确认创建','cw-confirm',true)}</div></div>`:''}</div><p class="cw-local-note">仅本地演示，文件不上传；3D拆分尚未连接实际程序。</p><input type="file" hidden id="cw-file-input" accept="${motion?'image/*':'image/*,video/*'}"></section></div>`;
+ const paint=()=>renderCreation(root,kind,typeChoices);
+ function selectFile(file){if(!file)return;const image=file.type.startsWith('image/'),video=file.type.startsWith('video/');if((motion&&!image)||(!motion&&!image&&!video)){notify(root,motion?'3D壁纸请选择图片。':'请选择图片或视频。');return;}if(d.url)URL.revokeObjectURL(d.url);d.fileName=file.name;d.url=URL.createObjectURL(file);d.type=motion?'体感':video?'视频':'静态';d.name='';d.translations={};if(motion){d.stage='processing';d.process='处理中';paint();completeSplit(root,d,kind,typeChoices);}else{d.stage='metadata';paint();}}
+ root.onchange=e=>{if(e.target.id==='cw-file-input')selectFile(e.target.files?.[0]);};
+ root.oninput=e=>{if(e.target.matches('.cw-metadata input'))d.name=e.target.value;};
+ root.ondragover=e=>{if(e.target.closest('[data-cw-drop]'))e.preventDefault();};
+ root.ondrop=e=>{if(e.target.closest('[data-cw-drop]')){e.preventDefault();selectFile(e.dataTransfer?.files?.[0]);}};
+ root.onclick=e=>{const b=e.target.closest('[data-an]');if(!b)return;const a=b.dataset.an;if(a==='cw-file'){root.querySelector('#cw-file-input').click();return;}if(a==='cw-process'){d.stage='processing';d.process='处理中';paint();completeSplit(root,d,kind,typeChoices);return;}if(a==='cw-translation'){if(!d.name.trim()){notify(root,'请先填写壁纸名称。');return;}openWallpaperTranslation(root,d,'creation');return;}if(a==='cw-translation-save'){saveWallpaperTranslation(root,b,d);return;}if(a==='cw-confirm'||a==='cw-draft'){if(!d.name.trim()){notify(root,'请填写壁纸名称。');return;}if(a==='cw-confirm'&&!Object.keys(d.translations||{}).length){notify(root,'请先维护名称翻译。');return;}const item={...d,name:d.name.trim(),translations:{...d.translations},id:d.id||'wallpaper-'+Date.now(),state:'草稿',process:motion?'处理成功（本地模拟）':'无需拆分'};const old=wallpaperItems.findIndex(x=>x.id===item.id);if(old<0)wallpaperItems.push(item);else wallpaperItems[old]=item;d.id=item.id;if(a==='cw-confirm'){delete creationDrafts[kind];nav('admin-new-wallpapers',root);notify(root,'已创建，已加入壁纸列表，当前为草稿。');}else notify(root,'草稿已保留在本地壁纸列表。');return;}};
+ return true;
+}
+function completeSplit(root,d,kind,typeChoices){const token=Symbol('split');d.splitToken=token;setTimeout(()=>{if(d.splitToken!==token)return;d.stage='metadata';d.process='处理成功（本地模拟）';if(currentCreation===d&&root.classList.contains('admin-wallpaper-creation')&&window.ADMIN_UI?.current==='create')renderCreation(root,kind,typeChoices);},1000);}
+function openWallpaperTranslation(root,d,mode){
+ const rows=Object.entries(d.translations||{});const first=rows[0]||['',''];const m=modal(root,'壁纸名称翻译',`<div class="an-form">${field('原文',d.name||'','当前壁纸名称，先在命名页填写。',{readonly:true,full:true})}${field('目标语言',first[0],'使用后台现有语言的名称；这里只保存壁纸译文，不会新增后台语言。',{placeholder:'填写语言名称',full:true})}${field('翻译内容',first[1],'当前壁纸名称在目标语言中的展示文案。',{textarea:true,full:true})}</div>${rows.length?`<p class="an-note">已维护：${rows.map(([lang])=>E(lang)).join('、')}</p>`:''}<div class="an-actions">${bt('保存本地文案','cw-translation-save',true)}</div><div class="cw-translation-error" role="status"></div>`);
+ m.querySelectorAll('input')[1].addEventListener('change',e=>{m.querySelector('textarea').value=d.translations?.[e.target.value.trim()]||'';});
+}
+function saveWallpaperTranslation(root,b,d){const mask=b.closest('.an-modal-mask');const inputs=mask.querySelectorAll('input');const language=inputs[1]?.value.trim(),text=mask.querySelector('textarea')?.value.trim();if(!language||!text){mask.querySelector('.cw-translation-error').textContent='请填写目标语言和翻译内容。';return;}d.translations||={};d.translations[language]=text;mask.remove();const count=root.querySelector('.cw-translation-count');if(count)count.textContent='已维护 '+Object.keys(d.translations).length+' 种翻译';notify(root,'名称翻译已保存在本地。');}
+
+window.WALLPAPER_SEEDS=wallpaperItems.filter(x=>x.id.startsWith('sample-'));
+const API={screens,render,renderCreation,onNavigate:null};window.ADMIN_NEW=API;
+})();

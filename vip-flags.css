@@ -1,0 +1,32 @@
+/* 新增后台开关与角标保持黑白灰。 */
+.admin-vip-field,.we-resource-flags{display:flex;align-items:center;flex-wrap:wrap;gap:14px 28px;margin:18px 0;color:#555;font-size:14px}
+.admin-vip-field>span,.we-resource-flag>span{font-weight:500}
+.admin-vip-field label,.we-resource-flag{display:inline-flex;align-items:center;gap:10px}
+.admin-vip-field input[type=checkbox],.we-resource-flags input[type=checkbox]{appearance:auto;width:17px!important;height:17px!important;min-height:0!important;padding:0!important;margin:0!important;accent-color:#333;flex:none}
+.resource-flag-badges{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:7px;vertical-align:middle}
+.resource-flag-badge{display:inline-block;white-space:nowrap;font-size:10px!important;line-height:1.6;padding:1px 5px;border-radius:3px;border:1px solid #aaa;color:#555;background:#f3f3f3;font-weight:500}
+.we-resource-flags{padding:12px 0;margin:0 0 16px}
+.we-resource-flags input:disabled{opacity:.6}
+
+.admin-vip-field input[role=switch],.we-resource-flags input[role=switch]{appearance:none;width:36px!important;height:20px!important;border:0;border-radius:10px;background:#b7b7b7;position:relative;vertical-align:middle;cursor:pointer;box-shadow:none}
+.admin-vip-field input[role=switch]::after,.we-resource-flags input[role=switch]::after{content:"";display:block;position:absolute;width:16px;height:16px;left:2px;top:2px;border-radius:50%;background:#fff;transition:transform .12s}
+.admin-vip-field input[role=switch]:checked,.we-resource-flags input[role=switch]:checked{background:#333}
+.admin-vip-field input[role=switch]:checked::after,.we-resource-flags input[role=switch]:checked::after{transform:translateX(16px)}
+.admin-vip-field input[role=switch]:focus-visible,.we-resource-flags input[role=switch]:focus-visible{outline:2px solid #777;outline-offset:3px}
+
+/* 模板原“加入精选”控件原位改成灰色滑动开关。 */
+.admin-featured-toggle{display:inline-flex!important;align-items:center;gap:9px}
+.admin-resource-switch[role=switch]{appearance:none;width:36px!important;height:20px!important;min-height:20px!important;border:0!important;border-radius:10px;background:#b7b7b7;position:relative;vertical-align:middle;cursor:pointer;box-shadow:none;padding:0!important;margin:0!important;flex:none}
+.admin-resource-switch[role=switch]::after{content:"";display:block;position:absolute;width:16px;height:16px;left:2px;top:2px;border-radius:50%;background:#fff;transition:transform .12s}
+.admin-resource-switch[role=switch]:checked{background:#333}
+.admin-resource-switch[role=switch]:checked::after{transform:translateX(16px)}
+.admin-resource-switch[role=switch]:focus-visible{outline:2px solid #777;outline-offset:3px}
+
+.admin-vip-inline{margin:0!important;white-space:nowrap}
+
+/* 模板筛选与名称上方的标记共用现有布局，不新增 VIP 列。 */
+.admin-template-vip-filter select{min-width:84px}
+.admin-template>span:has(>[data-resource-flags]){display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.admin-template [data-resource-flags]{display:inline-flex;align-items:center;flex-wrap:nowrap;gap:5px;order:-1;margin-left:0;white-space:nowrap}
+.admin-template [data-resource-flag="featured"]{order:0;margin-right:0}
+.admin-template .template-row-inline-vip,.admin-template [data-resource-flag="vip"]{order:1;flex:none}

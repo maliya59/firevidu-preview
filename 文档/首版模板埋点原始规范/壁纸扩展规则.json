@@ -1,0 +1,93 @@
+{
+  "version": "1.1",
+  "scope": "用户补充：壁纸与模板采用相同三步统计，后台分别按内容展示",
+  "events": [
+    "wallpaper_impression",
+    "wallpaper_click",
+    "wallpaper_set_success"
+  ],
+  "visibility": {
+    "ratio": 0.5,
+    "continuous_ms": 1000,
+    "foreground_and_unblocked": true,
+    "fast_click": "先补曝光再记点击",
+    "dedup": [
+      "list_round_id",
+      "wallpaper_id"
+    ]
+  },
+  "success": {
+    "trigger": "系统设置适配器明确success",
+    "exclude": [
+      "失败",
+      "取消",
+      "unknown",
+      "只返回App",
+      "历史记录再次设置",
+      "个人照片生成3D（无列表曝光/点击）"
+    ],
+    "dedup": "creation_id（本次设置任务编号）"
+  },
+  "cohort": {
+    "anchor": "曝光时间",
+    "timezone": "Asia/Kolkata",
+    "storage": "UTC",
+    "window_hours": 24,
+    "count": "每张壁纸的actor_id去重人数"
+  },
+  "fields": [
+    "event_id",
+    "event_name",
+    "occurred_at",
+    "actor_id",
+    "content_kind",
+    "wallpaper_id",
+    "wallpaper_name",
+    "output_type",
+    "vip",
+    "source",
+    "position",
+    "list_round_id",
+    "impression_id",
+    "flow_id",
+    "click_event_id",
+    "creation_id"
+  ],
+  "output_types": [
+    "static",
+    "video",
+    "motion"
+  ],
+  "ui": {
+    "menu": "壁纸管理 / 壁纸数据统计",
+    "columns": [
+      "壁纸封面及名称",
+      "曝光人数",
+      "点击人数",
+      "设置人数",
+      "点击率",
+      "点击后设置率"
+    ],
+    "filters": [
+      "名称或ID",
+      "开始日期",
+      "结束日期",
+      "内容类型"
+    ],
+    "markers": [
+      "列表封面蓝圈1",
+      "设置成功结果蓝圈2"
+    ],
+    "help": "只写直白中文，技术字段留文档",
+    "sort": "人数与比例上下小三角，名称不排序，再点同方向取消"
+  },
+  "prototype": "仅local_demo，不发真实采集请求，不把模拟回报冒充真实系统回报",
+  "report_schedule": {
+    "timezone": "Asia/Kolkata",
+    "time": "00:00",
+    "latest_date": "昨天",
+    "exclude_current_day": true,
+    "cross_day_conversion": "在下次日结补回原曝光日",
+    "prototype": "只模拟发布口径，真实服务端日结另接"
+  }
+}

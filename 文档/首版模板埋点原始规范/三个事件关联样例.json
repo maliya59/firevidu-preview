@@ -1,0 +1,52 @@
+{
+  "说明": "仅为结构与关联示例 编号格式由开发定义 不是真实数据",
+  "events": [
+    {
+      "actor_id": "用户甲",
+      "template_id": "模板甲编号",
+      "style_id": "风格甲编号",
+      "output_type": "image",
+      "vip": false,
+      "source": "home",
+      "position": 1,
+      "list_round_id": "浏览轮次编号",
+      "impression_id": "曝光编号",
+      "event_id": "曝光事件编号",
+      "event_name": "template_impression",
+      "occurred_at": "2026-11-20T04:00:00Z"
+    },
+    {
+      "actor_id": "用户甲",
+      "template_id": "模板甲编号",
+      "style_id": "风格甲编号",
+      "output_type": "image",
+      "vip": false,
+      "source": "home",
+      "position": 1,
+      "list_round_id": "浏览轮次编号",
+      "impression_id": "曝光编号",
+      "event_id": "点击事件编号",
+      "event_name": "template_click",
+      "occurred_at": "2026-11-20T04:00:02Z",
+      "flow_id": "本次流程编号",
+      "click_event_id": "点击事件编号"
+    },
+    {
+      "actor_id": "用户甲",
+      "template_id": "模板甲编号",
+      "style_id": "风格甲编号",
+      "output_type": "image",
+      "vip": false,
+      "source": "home",
+      "position": 1,
+      "list_round_id": "浏览轮次编号",
+      "impression_id": "曝光编号",
+      "event_id": "保存事件编号",
+      "event_name": "template_save_success",
+      "occurred_at": "2026-11-20T04:05:00Z",
+      "flow_id": "本次流程编号",
+      "click_event_id": "点击事件编号",
+      "creation_id": "本次制作编号"
+    }
+  ]
+}

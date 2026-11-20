@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="375" height="812" viewBox="0 0 375 812" role="img" aria-label="支付成功原型图">
+ <rect x=".5" y=".5" width="374" height="811" fill="white" stroke="#c8c8c8"/>
+ <style>text{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;fill:#333}.copy{font-size:14px;text-anchor:middle;fill:#555}.button{font-size:15px;font-weight:600;text-anchor:middle}.label{font-size:13px;fill:#777}</style>
+ <text x="24" y="30" font-size="14">9:41</text><path d="M285 24h13v-4h13v-4h13v12h-39z M333 21h8l-3 5h-7z" fill="#333"/>
+ <text x="19" y="75" font-size="29">‹</text><text x="187.5" y="72" text-anchor="middle" font-size="20" font-weight="700">购买结果</text>
+ <circle cx="187.5" cy="181" r="38" fill="#f5f5f5" stroke="#777" stroke-width="1.5"/><text x="187.5" y="195" text-anchor="middle" font-size="38">✓</text>
+ <text x="187.5" y="257" text-anchor="middle" font-size="24" font-weight="700">支付成功</text><text x="187.5" y="283" class="copy">会员购买成功</text><text x="187.5" y="302" class="copy">已购买的期限已保存。</text><text x="187.5" y="327" class="copy">可在我的会员查看生效时间与赠券。</text>
+ <rect x="20" y="389" width="335" height="94" rx="6" fill="#f7f7f7" stroke="#d0d0d0"/><text x="36" y="419" class="label">购买套餐</text><text x="339" y="419" text-anchor="end" font-size="15" font-weight="600">月付会员</text><text x="36" y="454" class="label">套餐价格</text><text x="339" y="454" text-anchor="end" font-size="15">xx / 月</text>
+ <rect x="20" y="600" width="335" height="46" rx="6" fill="#333"/><text x="187.5" y="629" class="button" style="fill:white">查看我的会员</text><rect x="20" y="658" width="335" height="44" rx="6" fill="white" stroke="#bbb"/><text x="187.5" y="686" class="button">返回</text>
+ <text x="187.5" y="751" class="label" text-anchor="middle">订阅说明　　管理订阅</text><rect x="130" y="799" width="115" height="4" rx="2" fill="#333"/>
+ </svg>

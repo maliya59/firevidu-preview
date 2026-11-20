@@ -1,0 +1,14 @@
+/* 首页分类与原稿版式；封面角标统一由 resource-badges.css 管理。 */
+.vip-category-strip{position:absolute;z-index:6;left:15px;right:0;top:138px;height:38px;display:flex;align-items:center;gap:19px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding-right:15px;scrollbar-width:thin;scrollbar-color:#62596e transparent;overscroll-behavior:contain}
+.vip-category-strip::-webkit-scrollbar{height:2px}.vip-category-strip::-webkit-scrollbar-thumb{background:#62596e;border-radius:2px}
+.vip-category-tab{flex:none;height:29px;padding:0;border:0;background:transparent;color:#b3a8c1;font:16px/1.4 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;border-radius:3px}
+.vip-category-tab[aria-selected=true]{color:#bda3ff;font-weight:600}
+.vip-category-tab.vip-category-entry{padding:2px 9px;border:1px solid #bdbdbd;background:#eee;color:#555;font-size:14px;font-weight:600}
+.vip-category-tab.vip-category-entry[aria-selected=true]{background:#333;border-color:#bbb;color:#fff}
+.vip-category-tab:focus-visible{outline:2px solid #ddd;outline-offset:2px}
+.vip-template-grid{position:absolute;z-index:4;left:15px;right:15px;display:grid;grid-template-columns:repeat(2,165px);gap:16px 15px;align-content:start;overflow:auto;scrollbar-width:thin;scrollbar-color:#62596e transparent;overscroll-behavior:contain}
+.vip-template-card{position:relative;display:block;width:165px;height:266px;overflow:hidden;border:0;border-radius:6px;padding:0;background:transparent;cursor:pointer;text-align:left}
+.vip-template-card:focus-visible{outline:2px solid #ccc;outline-offset:-2px}
+.vip-template-visual{width:165px;height:266px;pointer-events:none}.vip-template-visual>svg{display:block;width:165px!important;height:auto!important;overflow:hidden}
+.vip-template-more{grid-column:1/-1;border:1px solid #6d627a;background:#2a2337;color:#c8bdd6;border-radius:5px;padding:10px;font:13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer}
+.vip-template-empty{grid-column:1/-1;color:#b3a8c1;font-size:14px;text-align:center;margin:28px 0}
