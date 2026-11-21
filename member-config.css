@@ -18,3 +18,5 @@
 .mc-dialog h2{font-size:20px;margin:0 0 20px}.mc-dialog p{line-height:1.8}.mc-dialog-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
 .member-config [data-help]{cursor:help}.member-config button[data-help],.member-config input[data-help]{cursor:auto}
 @media(max-width:850px){.mc-simple-grid{grid-template-columns:minmax(0,1fr);gap:24px}.mc-heading{flex-wrap:wrap;gap:18px}}
+
+.mc-settings{max-width:none}.mc-plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}.mc-plan-section{border:1px solid #ddd;border-radius:8px;padding:22px;display:flex;flex-direction:column;gap:22px}.mc-plan-section h2{margin:0;font-size:21px}.mc-plan-section .mc-input-row{gap:8px}.mc-plan-section small{min-width:0;font-size:12px}.mc-not-applicable{font-size:13px;color:#888;min-height:63px;margin:0;display:flex;align-items:center}.mc-plan-summary,.mc-config-note{font-size:13px;line-height:1.7;color:#666;margin:0}.mc-plan-summary{padding-top:15px;border-top:1px solid #eee}.mc-config-note{margin-top:24px}@media(max-width:1100px){.mc-plan-grid{grid-template-columns:1fr}.mc-not-applicable{min-height:0}}

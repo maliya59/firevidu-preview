@@ -1,0 +1,13 @@
+/* 套餐参数和日券调度。旧订单沿用快照，新订单按三套餐独立参数执行。 */
+((root)=>{'use strict';
+const DAY=86400000,IST=330*60000;
+const defaults={week:{price:'xx',initialCount:7,monthlyCount:0,dailyCount:2,renewalBonus:2},month:{price:'xx',initialCount:30,monthlyCount:0,dailyCount:3,renewalBonus:5},year:{price:'xx',initialCount:30,monthlyCount:30,dailyCount:4,renewalBonus:30}};
+const copy=x=>JSON.parse(JSON.stringify(x));
+function normalize(config={}){const result={...config,benefitsSchema:3,plans:{}};for(const key of Object.keys(defaults)){const raw=config.plans?.[key]||{};result.plans[key]={...defaults[key],...raw};for(const field of ['initialCount','monthlyCount','dailyCount','renewalBonus'])if(!Number.isSafeInteger(raw[field])||raw[field]<0)result.plans[key][field]=defaults[key][field];}result.plans.week.monthlyCount=0;result.plans.month.monthlyCount=0;result.renewalBonusExpiry='new-period-end';return result;}
+function forPlan(config={},plan='month'){if(config.benefitsSchema===3)return normalize(config).plans[plan];return {...defaults[plan],price:config.plans?.[plan]?.price||'xx',initialCount:plan==='week'?(config.weeklyCount??7):(config.monthlyCount??30),monthlyCount:plan==='year'?(config.monthlyCount??30):0,dailyCount:config.dailyCount??3,renewalBonus:0};}
+const day=t=>Math.floor((t+IST)/DAY);
+function daily(payment,now){if(!payment||payment.startsAt>now||payment.expiresAt<=now)return null;const start=payment.startsAt??payment.paidAt,rules=forPlan(payment.entitlements,payment.plan),days=payment.plan==='week'?7:Math.round((payment.expiresAt-start)/DAY),index=day(now)-day(start);if(index<0||(payment.entitlements?.benefitsSchema===3&&index>=days))return null;return {id:'daily:'+day(now),count:rules.dailyCount,at:index===0?start:day(now)*DAY-IST,expiry:(day(now)+1)*DAY-IST,index};}
+function periodCount(payment,cycle){const p=forPlan(payment.entitlements,payment.plan);return payment.plan==='year'&&cycle.index>0?p.monthlyCount:p.initialCount;}
+function renewal(receipt,existing){const early=existing.some(p=>!p.revoked&&!p.refunded&&p.status!=='已退款'&&p.expiresAt>receipt.paidAt&&(p.startsAt??p.paidAt)<=receipt.paidAt);const rules=forPlan(receipt.entitlements,receipt.plan);return early&&rules.renewalBonus>0?{count:rules.renewalBonus,at:receipt.paidAt,expiry:receipt.expiresAt,id:'renewal:'+receipt.id}:null;}
+const api={defaults:copy(defaults),normalize,forPlan,daily,periodCount,renewal,DAY};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MEMBER_BENEFITS=api;
+})(typeof window==='undefined'?globalThis:window);

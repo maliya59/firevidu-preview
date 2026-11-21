@@ -32,6 +32,6 @@ function monthlyCycle(payment,now=Date.now()){
  const at=addMonths(anchor,index,payment.anchorDay),expiry=Math.min(addMonths(anchor,index+1,payment.anchorDay),payment.expiresAt);
  return at<=now&&expiry>now?{at,expiry,index,cycleId:payment.id+':'+index}:null;
 }
-const help='周卡有效7×24小时，每7天自动续订；月卡按月、年卡按年自动续订。未到期续费从全部已付款权益的最后到期日接续，已到期重开从付款确认时开始。套餐按顺序生效，当前权益不提前切换；每笔订单独立保留期限。周卡每期默认7张通用券，月卡和年卡每月默认30张，新周期开始才发，到对应周期结束时过期。三种套餐每天默认3张日券，同一用户同一印度业务日只发一次，不补往日。7×24小时可能跨8个印度自然日，不承诺固定总券数。月卡和年卡保留月末锚点；经过周卡后按新月周期的开始日期计算。重复核验或恢复不重复延长、发券；真实扣款和套餐切换以支付平台核验为准。';
+const help='三套餐独立配置：周卡单次7张、每日2张，共7次日券合计21张，生效日先得9张；月卡单次30张、每日3张；年卡首月30张，之后每月开通日30张、每日4张。日券当天有效且同日只发一批，周卡不发第8批。提前续费从已付款的最后到期日接续，新周期开始发基础券；立即额外奖励分别示例2、5、30张，到新购套餐结束时过期。已有订单保留原参数，新单使用已保存配置。恢复或重复回调不重复发。退款回收对应未用奖励，已消耗部分留账不倒扣无关券。实际支付及混合套餐续费以Google Play核验和平台支持为准。';
 window.MEMBERSHIP_PERIODS={help,confirmed,revoked,history,start,addMonths,schedule,summary,monthlyCycle};
 })();

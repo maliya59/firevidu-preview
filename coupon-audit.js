@@ -3,9 +3,9 @@
 const number=v=>Number.isFinite(v)?v:null;
 const count=v=>Number.isInteger(v)&&v>=0?v:null;
 const type=v=>v==='general'||v==='通用券'?'general':'watermark';
-const debit=row=>['−','-'].includes(row.sign)||row.kind==='使用';
+const debit=row=>row.kind!=='回收'&&(['−','-'].includes(row.sign)||row.kind==='使用');
 const refund=row=>row.kind==='返还';
-const sourceType=(source,cycle)=>String(cycle||'').startsWith('B02:')||/广告.*奖励/.test(source)?'ad':/会员/.test(source)?'member':/邀请|好友/.test(source)?'invite':'other';
+const sourceType=(source,cycle)=>String(cycle||'').startsWith('B02:')||/广告.*奖励/.test(source)?'ad':/会员|续费/.test(source)?'member':/邀请|好友/.test(source)?'invite':'other';
 const sum=(rows,key)=>rows.reduce((n,row)=>n+(Number(row[key])||0),0);
 // 原型自带的两条固定示例：发放量及15天期限由初始化代码明确定义。
 // 仅补齐这两条已知演示记录，不推算用户的其他领取记录。
@@ -40,6 +40,7 @@ function build(input,now=Date.now()){
     add('使用',part.count,row.at,id,row.purpose||'用途未记录','',row.id||'');
     if(n&&!explicitReturns.some(ret=>ret.relatedEventId===row.id))add('返还',n,null,'legacy-return-'+id,'历史返还：返还时间未记录',row.id||'');
    }
+   for(const row of rows.filter(row=>row.kind==='回收'&&row.batchId===batchId))add('回收',row.n,row.at,row.id,row.purpose||'退款回收');
    for(const row of explicitReturns)add('返还',row.n,row.at,row.id,row.purpose||'失败返还',row.relatedEventId||'',row.relatedEventId||'');
    if(batch.expiredCount){
     const lateReturns=explicitReturns.filter(row=>number(row.at)!==null&&row.at>=expiry),late=sum(lateReturns,'n'),initial=Math.max(0,batch.expiredCount-late);
