@@ -73,6 +73,7 @@ function sampleData(){
  const m2=make('demo-member02','会员用券示例',true),month=issue(m2,'DEMO-MONTH-002',30,'会员每月赠券','2026-11-16T09:20','2026-12-16T09:20');use(m2,month,'DEMO-USE-004',2,'超清保存','2026-11-17T09:40');
  const r=issue(m2,'DEMO-DAILY-002',3,'会员每日权益','2026-11-17T00:00','2026-11-18T00:00'),used=use(m2,r,'DEMO-USE-005',1,'高清保存','2026-11-17T10:05',1);m2.ledger.push({id:'DEMO-RETURN-001',batchId:r.id,type:'通用券',n:1,source:r.source,purpose:'保存失败返还',kind:'返还',sign:'+',relatedEventId:used.id,at:at('2026-11-17T10:06')});
  const m6=make('demo-member06','会员接续示例',true),m6month=issue(m6,'DEMO-MONTH-006',30,'会员每月赠券','2026-11-16T10:00','2026-12-16T10:00');use(m6,m6month,'DEMO-USE-006',2,'设置视频壁纸','2026-11-17T11:03');issue(m6,'DEMO-DAILY-006',3,'会员每日权益','2026-11-17T00:00','2026-11-18T00:00');
+ const m7=make('demo-member07','周卡接续月卡示例',true);issue(m7,'DEMO-WEEK-OLD-007',7,'7天会员赠券','2026-11-01T09:00','2026-11-08T09:00','DEMO-ORDER-016:0');issue(m7,'DEMO-DAILY-OLD-007',3,'会员每日权益','2026-11-01T09:00','2026-11-02T00:00');issue(m7,'DEMO-WEEK-007',7,'7天会员赠券','2026-11-17T09:00','2026-11-24T09:00','DEMO-ORDER-014:0');issue(m7,'DEMO-DAILY-007',3,'会员每日权益','2026-11-17T09:00','2026-11-18T00:00');
  return data;
 }
 function snapshot(){const live=window.NEW_UI?.couponAudit;return build([...(live?[live]:[]),...sampleData()]);}
