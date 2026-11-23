@@ -25,7 +25,7 @@ function go(k,record=true){if(window.AD_REVIEW?.beforeGo(k,record))return;const 
 function back(){if(state.modal){closeModal();return}if(window.NEW_UI?.exitPreparedRetry())return;const k=stack.pop()||'home';go(k,false);}
 function profile(){go(state.logged?'profile-in':'profile');}
 function nav(root,k){const es=entries(k);for(const label of ['首页','作品','我的']){const l=es.find(x=>x.type==='text'&&x.text===label&&x.y>650);if(l)region(root,k,'底部导航 · '+label,Math.max(0,l.x-25),l.y-35,100,74,()=>label==='首页'?go('home'):label==='作品'?go(state.deleted.length>=3?'empty':'works'):profile());}}
-function attachBack(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&x.nativeName==='返回'))region(root,k,'返回',l.x-5,l.y-5,l.w+10,l.h+10,()=>{if(k==='creating')openModal('exit-creating');else if(k==='confirm-video')go('save-video',false);else if(k==='save-video')go('detail-video',false);else if(k==='save-image')openModal('exit-save');else back();});}
+function attachBack(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&x.nativeName==='返回'))region(root,k,'返回',l.x-5,l.y-5,l.w+10,l.h+10,()=>{if(k==='creating')openModal('exit-creating');else if(k==='confirm-video')go('save-video',false);else if(k==='save-video')openModal('exit-save');else if(k==='save-image')openModal('exit-save');else back();});}
 function ads(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&/关闭|删除/.test(x.nativeName)&&x.w<=24&&x.y>600))region(root,k,'关闭横幅广告',l.x-4,l.y-4,l.w+8,l.h+8,()=>hideBanner(root,k));}
 function hideBanner(root,k){
  const layers=entries(k),labels=layers.filter(x=>x.type==='text'&&/横幅广告\s*Banner/i.test(x.text));
@@ -113,7 +113,7 @@ function openModalCore(k){if(k==='watermark'&&window.NEW_UI){window.NEW_UI.unloc
   const copyLine=entries(k).find(l=>l.type==='text'&&l.text.startsWith('下载 FireVidu'));
   if(copyLine)region(sheet,k,'复制分享文案',15,copyLine.y-12,w-30,54,()=>{try{navigator.clipboard?.writeText(copyLine.text)?.catch(()=>{});}catch{}status('已复制原稿分享文案；未设置真实下载地址');});
  }
- if(['exit-creating','stop-creating','exit-save'].includes(k)){bind(sheet,k,'取消',close,20);for(const label of ['确认退出','取消制作'])bind(sheet,k,label,()=>{close();go('home');},20);}
+ if(['exit-creating','stop-creating','exit-save'].includes(k)){bind(sheet,k,'取消',close,20);for(const label of ['确认退出','取消制作'])bind(sheet,k,label,()=>{window.TEMPLATE_METRICS?.confirmExit();const destination=state.screen==='save-video'?'detail-video':'home';close();go(destination);},20);}
  if(k==='failed')bind(sheet,k,'再试一次',()=>{close();go('creating');},20);
  if(k==='watermark'){bind(sheet,k,'暂不解锁',close,16);bind(sheet,k,'观看广告解锁',()=>{const base=state.screen;close();playAd(()=>{state.watermark=true;persist();go(base,false)},base)},16);}
  window.NEW_UI?.enhanceModal(k,sheet);window.VIP_ACCESS?.enhanceModal?.(k,sheet);updateDirectory();
