@@ -9,8 +9,13 @@ try{stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')||{};}catch{}
 const regularOnly=new Set(['模板浏览返回插页广告','券包自愿领券激励广告','壁纸首页原生广告','壁纸首页底部横幅广告']);
 const legacyFallback={'照片生成3D插页广告':'制作同款开始制作插页广告','壁纸记录动态再次设置插页广告':'制作同款开始制作插页广告'};
 function locked(row,key){return Boolean(key==='member'&&(row.fixedMemberOff||regularOnly.has(row.legacy)));}
-function defaultValue(row,key){if(key==='regular')return true;return row.type!=='横幅广告'&&row.type!=='插页广告'&&!row.fixedMemberOff&&!regularOnly.has(row.legacy);}
-for(const key of Object.keys(AUDIENCES))for(const row of ROWS){const previous=old[key]?.[row.legacy]??old[key]?.[legacyFallback[row.legacy]];settings[key][row.id]=typeof stored[key]?.[row.id]==='boolean'?stored[key][row.id]:typeof previous==='boolean'?previous:defaultValue(row,key);}
+function defaultValue(row,key){if(key==='regular'||row.defaultMemberOn)return true;return row.type!=='横幅广告'&&row.type!=='插页广告'&&!row.fixedMemberOff&&!regularOnly.has(row.legacy);}
+// This rule now includes members. Migrate this one member slot once; subsequent
+// explicit changes remain independent of the image-creation and other ad slots.
+const photo3dPolicyVersion=1,migratePhoto3d=stored.photo3dPolicyVersion!==photo3dPolicyVersion;
+for(const key of Object.keys(AUDIENCES))for(const row of ROWS){const previous=old[key]?.[row.legacy]??old[key]?.[legacyFallback[row.legacy]];settings[key][row.id]=migratePhoto3d&&key==='member'&&row.id==='custom-generate-interstitial'?true:typeof stored[key]?.[row.id]==='boolean'?stored[key][row.id]:typeof previous==='boolean'?previous:defaultValue(row,key);}
+function saveSettings(){localStorage.setItem(STORAGE_KEY,JSON.stringify({...settings,photo3dPolicyVersion}));}
+if(migratePhoto3d)try{saveSettings();}catch{}
 const byId=new Map(ROWS.map(row=>[row.id,row])),byName=new Map(ROWS.map(row=>[row.name,row]));
 function route(context={}){const s=window.__DEMO__?.state||{};return {scene:context.scene||s.screen||'home',type:context.type||s.type||'image',worksTab:context.worksTab||window.WALLPAPER_V2?.activeWorksTab||'creations',returnSource:context.returnSource||'home'};}
 function resolve(name,context={}){
@@ -34,7 +39,7 @@ function resolve(name,context={}){
  return byId.get(id)||null;
 }
 function isEnabled(name,targetAudience='regular',context={}){const key=targetAudience==='member'?'member':'regular',row=resolve(name,context);if(row)return !locked(row,key)&&settings[key][row.id]!==false;return typeof old[key]?.[name]==='boolean'?old[key][name]:true;}
-function setEnabled(id,key,on){const row=byId.get(id);if(!row||!Object.hasOwn(AUDIENCES,key)||locked(row,key))return false;settings[key][id]=Boolean(on);let persisted=true;try{localStorage.setItem(STORAGE_KEY,JSON.stringify(settings));}catch{persisted=false;}if(typeof window.dispatchEvent==='function'&&typeof CustomEvent==='function')window.dispatchEvent(new CustomEvent('ad-config-change',{detail:{id,audience:key,enabled:Boolean(on)}}));return persisted;}
+function setEnabled(id,key,on){const row=byId.get(id);if(!row||!Object.hasOwn(AUDIENCES,key)||locked(row,key))return false;settings[key][id]=Boolean(on);let persisted=true;try{saveSettings();}catch{persisted=false;}if(typeof window.dispatchEvent==='function'&&typeof CustomEvent==='function')window.dispatchEvent(new CustomEvent('ad-config-change',{detail:{id,audience:key,enabled:Boolean(on)}}));return persisted;}
 
 function meaning(row,key){if(key==='member'&&(row.fixedMemberOff||regularOnly.has(row.legacy)))return row.description+' 本场景对有效VIP固定免除此广告，会员组不适用，不能通过这里改成收费。';return row.description+(row.type==='激励广告'?' 关闭仅免除此处广告，不扣券；不免其他独立解锁。':' 关闭仅隐藏此位置，不关闭功能。')+' 当前配置只影响'+(key==='member'?'会员':'普通用户')+'，不影响另一组。';}
 const help=(title,body)=>`data-help-title="${E(title)}" data-help="${E(body)}" data-help-status="本地原型"`;
