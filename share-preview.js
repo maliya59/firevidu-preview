@@ -1,7 +1,7 @@
-/* 公开分享版：保留浏览与右键说明，读取导出的壁纸快照，不连接本机写入接口。 */
+/* 公开分享版：保留浏览与右键说明，读取导出的壁纸快照；选择文件、创建和编辑只在当前浏览器会话演示。 */
 (()=>{'use strict';
 const base=new URL('./',document.currentScript.src),original=window.fetch.bind(window);
-window.SHARE_PREVIEW=Object.freeze({readOnly:true});
+window.SHARE_PREVIEW=Object.freeze({readOnly:true,sessionOnly:true});
 // A transient CDN/network failure should not leave an otherwise valid cover blank.
 const imageAttempts=new WeakMap(),failedImages=new Set();let imageNotice=null;
 function imageSource(element){return element?.tagName?.toLowerCase()==='img'?'src':element?.tagName?.toLowerCase()==='image'?(element.hasAttribute('href')?'href':'xlink:href'):null;}
@@ -27,14 +27,42 @@ document.addEventListener('error',event=>{
 },true);
 document.addEventListener('load',event=>{if(imageSource(event.target)){failedImages.delete(event.target);imageAttempts.delete(event.target);updateImageNotice();}},true);
 window.addEventListener('online',()=>imageNotice?.click());
+const previewUploads=new Set();let previewItems=null,previewLoad=null,previewSequence=0;
+const previewReply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});
+const previewClone=value=>JSON.parse(JSON.stringify(value));
+async function loadPreviewItems(){
+ if(previewItems)return previewItems;
+ if(!previewLoad)previewLoad=(async()=>{const response=await original(new URL('share-data/wallpapers.json',base),{cache:'no-store'});if(!response.ok)throw Error('壁纸快照未能加载，请重试');const value=await response.json();if(!Array.isArray(value.items))throw Error('壁纸快照格式不正确');previewItems=previewClone(value.items);return previewItems;})();
+ try{return await previewLoad;}finally{previewLoad=null;}
+}
+function allowedPreviewMedia(value){if(!value)return true;if(previewUploads.has(value))return true;try{const url=new URL(value,base);return url.origin===base.origin&&['assets/','uploads/'].some(folder=>url.pathname.startsWith(base.pathname+folder));}catch{return false;}}
 window.fetch=async(input,options={})=>{
  const url=new URL(input instanceof Request?input.url:String(input),location.href);
  if(url.origin!==location.origin||!url.pathname.startsWith('/api/'))return original(input,options);
  const method=String(options.method||(input instanceof Request?input.method:'GET')).toUpperCase();
- if(method==='GET'&&url.pathname==='/api/wallpapers')return original(new URL('share-data/wallpapers.json',base),{cache:'no-store'});
- if(method==='GET'&&url.pathname==='/api/health')return new Response(JSON.stringify({ok:true,service:'FireVidu share preview'}),{headers:{'Content-Type':'application/json'}});
- return new Response(JSON.stringify({error:'分享预览不保存修改，请在本地原型中操作。'}),{status:403,headers:{'Content-Type':'application/json'}});
+ if(method==='GET'&&url.pathname==='/api/health')return previewReply({ok:true,service:'FireVidu share preview'});
+ if(method==='POST'&&url.pathname==='/api/uploads'){
+  const file=options.body||(input instanceof Request?await input.clone().blob():null);
+  if(!(file instanceof Blob)||!file.type.match(/^(image|video)\//))return previewReply({error:'请选择图片或视频文件'},415);
+  if(file.size>100*1024*1024)return previewReply({error:'文件不能超过100MB'},413);
+  const headers=new Headers(options.headers||(input instanceof Request?input.headers:undefined)),name=decodeURIComponent(headers.get('X-File-Name')||file.name||'本地文件'),media=URL.createObjectURL(file);previewUploads.add(media);
+  return previewReply({url:media,fileName:name,mimeType:file.type,size:file.size},201);
+ }
+ if(method==='GET'&&url.pathname==='/api/wallpapers')try{return previewReply({items:previewClone(await loadPreviewItems())});}catch(error){return previewReply({error:error.message},503);}
+ if(method==='POST'&&['/api/wallpapers','/api/wallpapers/delete'].includes(url.pathname)){
+  let body;try{body=JSON.parse(options.body||(input instanceof Request?await input.clone().text():'{}'));}catch{return previewReply({error:'操作数据格式不正确'},400);}
+  let items;try{items=await loadPreviewItems();}catch(error){return previewReply({error:error.message},503);}
+  if(url.pathname.endsWith('/delete')){if(typeof body.id!=='string'||!body.id)return previewReply({error:'壁纸编号无效'},400);const index=items.findIndex(x=>x.id===body.id),deleted={...(items[index]||{id:body.id}),state:'已删除',deletedAt:Date.now()};if(index<0)items.unshift(deleted);else items[index]=deleted;return previewReply({deletedId:body.id,items:previewClone(items)});}
+  const item=body.item;if(!item||typeof item.name!=='string'||!item.name.trim()||item.name.length>200)return previewReply({error:'请填写壁纸名称，最长200字'},400);
+  if(!['静态','视频','体感'].includes(item.type)||!['草稿','已上架','已下架'].includes(item.state))return previewReply({error:'壁纸类型或状态不正确'},400);
+  if(['url','posterUrl','previewUrl'].some(key=>!allowedPreviewMedia(item[key])))return previewReply({error:'请选择当前浏览器中的文件或现有预览素材'},400);
+  const previous=items.find(x=>x.id===item.id);if(previous?.state==='已删除')return previewReply({error:'这条壁纸已删除，请返回列表'},410);
+  const saved={...previewClone(item),id:item.id||'preview-wallpaper-'+Date.now()+'-'+(++previewSequence),name:item.name.trim(),createdAt:previous?.createdAt||Date.now(),updatedAt:Date.now()};if(previous)items[items.indexOf(previous)]=saved;else items.unshift(saved);
+  return previewReply({item:previewClone(saved),items:previewClone(items)});
+ }
+ return previewReply({error:'此接口不在分享版演示范围内，不会向服务器保存修改。'},403);
 };
+window.addEventListener('pagehide',event=>{if(!event.persisted)for(const url of previewUploads)URL.revokeObjectURL(url);});
 document.addEventListener('DOMContentLoaded',()=>{
  new MutationObserver(()=>updateImageNotice()).observe(document.querySelector('#screen')||document.body,{childList:true,subtree:true});
  const tag=document.querySelector('.local-tag');if(tag)tag.textContent='分享预览 V2.6.1';

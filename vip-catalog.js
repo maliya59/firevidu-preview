@@ -18,7 +18,7 @@ function templateMeta(item){const stored=window.ADMIN_UI?.getTemplate?.(item.id)
 function rankVipBatch(items,options={}){return window.WALLPAPER_RANKING.nextBatch(items.filter(item=>item.vip===true).map(item=>({...item,state:item.state||'已上架',appVisible:item.appVisible!==false})),{...options,scope:{},batchIndex:2});}
 function beginVipRound(){vipRound={id:++vipRoundSequence,seen:new Set(),visible:[],scrollTop:0,now:Date.now()};}
 function appendVipBatch(){if(!vipRound)beginVipRound();const batch=rankVipBatch(templateSamples.map(templateMeta),{seen:vipRound.seen,now:vipRound.now});for(const id of batch.ids){vipRound.seen.add(id);vipRound.visible.push(id);}return batch.items.length>0;}
-function openTemplate(item,button){const meta=templateMeta(item);window.TEMPLATE_METRICS?.open(meta,button);if(window.VIP_ACCESS?.openTemplate)window.VIP_ACCESS.openTemplate(meta);else if(typeof start==='function')start(meta.type,meta);}
+function openTemplate(item,button){const meta=templateMeta(item);if(meta.appVisible===false||['已下架','已删除'].includes(meta.state)){if(typeof toast==='function')toast('该模板暂不可用');return;}window.TEMPLATE_METRICS?.open(meta,button);if(window.VIP_ACCESS?.openTemplate)window.VIP_ACCESS.openTemplate(meta);else if(typeof start==='function')start(meta.type,meta);}
 function node(root,id){return root.querySelector('[id="'+id+'"]');}
 function rememberVisibility(state,element,group='hidden'){const map=state[group];if(!element||map.has(element))return;map.set(element,element.style.visibility);element.style.visibility='hidden';}
 function restoreVisibility(state,group='hidden'){for(const [element,value]of state[group])if(element.isConnected)element.style.visibility=value;state[group].clear();}

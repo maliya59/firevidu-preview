@@ -59,7 +59,7 @@
  }
  document.querySelector('#reset').onclick=()=>{if(window.WALLPAPER_EDITOR?.guardExit(resetCurrentWorkspace))return;if(window.MEMBER_CONFIG?.guardExit(resetCurrentWorkspace))return;resetCurrentWorkspace();};
  // 后台打开时，Esc 关闭字段说明或后台弹层，不触发隐藏的 App 返回。
- document.addEventListener('keydown',e=>{if(workspace!=='admin'||e.key!=='Escape'||document.querySelector('.field-help-popup'))return;e.stopImmediatePropagation();if(window.WALLPAPER_EDITOR?.handleEscape())return;if(window.MEMBER_CONFIG?.handleEscape())return;window.ADMIN_UI.closeOverlays();adminWorkspace.querySelectorAll('.an-modal-mask').forEach(x=>x.remove());},true);
+ document.addEventListener('keydown',e=>{if(workspace!=='admin'||e.key!=='Escape'||document.querySelector('.field-help-popup'))return;e.stopImmediatePropagation();if(window.ADMIN_UI?.handleEscape?.())return;if(window.WALLPAPER_EDITOR?.handleEscape())return;if(window.MEMBER_CONFIG?.handleEscape())return;window.ADMIN_UI.closeOverlays();adminWorkspace.querySelectorAll('.an-modal-mask').forEach(x=>x.remove());},true);
  document.body.dataset.workspace='app';
  window.WORKSPACE_UI={switch:switchWorkspace,get current(){return workspace;},get admin(){return adminWorkspace;}};
 })();
