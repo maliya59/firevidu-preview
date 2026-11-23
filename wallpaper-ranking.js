@@ -16,7 +16,7 @@ function uniqueById(items){
 }
 function scopeCandidates(items,scope={}){
  return uniqueById(items).filter(item=>{
-  if(item.appVisible===false||item.visible===false||item.state!=='已上架')return false;
+  if(item.appVisible===false||item.visible===false||item.state!=='已上架'||window.WALLPAPER_EDITOR?.isDeleted?.(item.id))return false;
   if(scope.column==='featured'&&!item.featured)return false;
   if(scope.category&&item.category!==scope.category&&!(Array.isArray(item.categories)&&item.categories.includes(scope.category)))return false;
   if(scope.search&&!String(item.title||item.name||'').toLocaleLowerCase().includes(String(scope.search).trim().toLocaleLowerCase()))return false;
@@ -128,15 +128,15 @@ function mount(root,list,options={}){
  if(options.searchPage)controls.querySelector('.wallpaper-ranking-types')?.remove();root.appendChild(controls);const view={root,list,controls,refreshing:true};activeView=view;
  function change(next){if(Object.entries(next).every(([key,value])=>selection[key]===value))return;selection={...selection,...next};startRound();draw(view);}
  for(const button of controls.querySelectorAll('[data-wallpaper-type]'))button.onclick=()=>change({type:button.dataset.wallpaperType});
- const search=controls.querySelector('[data-wallpaper-search]');const submit=()=>{if(options.searchPage){change({search:search.value.trim()});return;}homeSnapshot={selection:{...selection},round};searchMode=true;selection={...selection,search:search.value.trim()};startRound();go(SEARCH_SCREEN);};controls.querySelector('form').onsubmit=event=>{event.preventDefault();submit();};search.onsearch=()=>{if(options.searchPage)change({search:search.value.trim()});};
- help(controls,'壁纸类型与名称搜索','按创建入口的静态、视频、3D类型和名称查找App可见内容。点击搜索进入独立结果页，返回恢复首页列表；结果页不显示类型标签；提交新搜索开始新一轮，非全部类型范围在页标题注明。精选和VIP仅为独立标记，不增加栏目。下架或草稿不进入列表；缺少明确发布时间的旧内容不算近7天。');
+ const search=controls.querySelector('[data-wallpaper-search]');const submit=()=>{if(options.searchPage){change({type:'all',search:search.value.trim()});return;}homeSnapshot={selection:{...selection},round};searchMode=true;selection={type:'all',search:search.value.trim()};startRound();go(SEARCH_SCREEN);};controls.querySelector('form').onsubmit=event=>{event.preventDefault();submit();};search.onsearch=()=>{if(options.searchPage)change({type:'all',search:search.value.trim()});};
+ help(controls,'壁纸类型与名称搜索','搜索始终按名称查找全部已上架壁纸，包含静态、视频和3D，不受当前选中分类限制。点击搜索进入独立结果页，结果页不显示类型标签；提交新搜索仍在全部壁纸中查找，返回时恢复原分类和列表位置。精选和VIP为独立标记。已下架、草稿和已删除壁纸不进入搜索结果。');
  list.addEventListener('scroll',()=>{if(activeView!==view||!round)return;round.scrollTop=list.scrollTop;if(list.scrollTop+list.clientHeight>=list.scrollHeight-100&&appendBatch())draw(view);},{passive:true});
  // Check current shelf state before reattaching cached cards after a return.
  draw(view);refreshCatalog().then(()=>{view.refreshing=false;draw(view);});
 }
 window.addEventListener('vip-flags-change',()=>{if(activeView?.list.isConnected)draw(activeView);});
 function restoreHome(){if(!searchMode)return;selection=homeSnapshot?.selection||{type:'all',search:''};round=homeSnapshot?.round||null;homeSnapshot=null;searchMode=false;sourceScreen='new-wallpaper';}
-function renderSearch(key,root){if(key!==SEARCH_SCREEN)return false;root.innerHTML='<header class="wallpaper-search-header"><button type="button" aria-label="返回壁纸首页">‹</button><strong>壁纸搜索</strong></header>';root.className='wireframe wallpaper-search-page';root.querySelector('header strong').textContent=selection.type==='all'?'壁纸搜索':modeName(selection.type)+'壁纸搜索';document.querySelector('#phone').dataset.height=812;const list=document.createElement('div');list.className='wallpaper-grid';list.setAttribute('aria-label','壁纸搜索结果');root.append(list);root.querySelector('header button').onclick=()=>{restoreHome();if(typeof back==='function')back();else go('new-wallpaper',false);};mount(root,list,{searchPage:true});return true;}
+function renderSearch(key,root){if(key!==SEARCH_SCREEN)return false;root.innerHTML='<header class="wallpaper-search-header"><button type="button" aria-label="返回壁纸首页">‹</button><strong>壁纸搜索</strong></header>';root.className='wireframe wallpaper-search-page';root.querySelector('header strong').textContent='壁纸搜索';document.querySelector('#phone').dataset.height=812;const list=document.createElement('div');list.className='wallpaper-grid';list.setAttribute('aria-label','壁纸搜索结果');root.append(list);root.querySelector('header button').onclick=()=>{restoreHome();if(typeof back==='function')back();else go('new-wallpaper',false);};mount(root,list,{searchPage:true});return true;}
 window.WALLPAPER_RANKING={renderSearch,restoreHome,get sourceScreen(){return sourceScreen;},publicationTime,uniqueById,scopeCandidates,shuffled,regularOrder,nextBatch,mergeCatalog,mount,refresh:refreshCatalog,
  reset(){round=null;selection={type:'all',search:''};searchMode=false;homeSnapshot=null;sourceScreen='new-wallpaper';},
  get catalog(){return currentCatalog();},get selection(){return {...selection};},get round(){return round?{...round,scope:{...round.scope},seen:[...round.seen],visible:[...round.visible]}:null;}};

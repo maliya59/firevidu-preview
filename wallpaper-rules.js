@@ -6,7 +6,7 @@ const panel=document.createElement('aside');
 panel.className='wallpaper-rules';panel.hidden=true;
 panel.setAttribute('aria-label','壁纸排序规则说明');
 panel.innerHTML=`<header><span>原型说明</span><h2>壁纸排序规则</h2></header>
-<p class="wr-scope">当前版本只有<strong>全部、静态壁纸、视频壁纸、3D壁纸</strong>四个入口，按创建入口自动归类，并支持名称搜索。所有抽取均限定在当前类型、搜索结果及 App 可见范围内。先按壁纸 ID 去重，并排除本轮已安排的壁纸。</p>
+<p class="wr-scope">当前版本只有<strong>全部、静态壁纸、视频壁纸、3D壁纸</strong>四个入口，按创建入口自动归类。浏览分类时按所选类型展示；名称搜索始终查找全部已上架壁纸，不受当前类型限制，返回后恢复原分类和列表位置。所有抽取均限定在 App 可见范围内。先按壁纸 ID 去重，并排除本轮已安排的壁纸。</p>
 <p class="wr-note">卡片左上写“精选”，右上写近7天上架的“新增”，左下写 VIP，右下写图片、视频或3D；均为简单文字标签，不显示视频时长。各标记独立，不单设精选栏目，使用规则不变。</p>
 <section><h3>全部及各类型 · 前两批</h3><p>每批最多 12 张，依次选取：</p><ol>
 <li>随机选 4 张近 7 天上架的新壁纸，可包含精选。</li>
