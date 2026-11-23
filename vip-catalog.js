@@ -90,8 +90,9 @@ function drawVipTemplates(root,state){
 }
 function categoryNames(){
  const names=layerData('home').filter(layer=>layer.type==='text'&&layer.y===146).sort((a,b)=>a.x-b.x).map(layer=>layer.text.trim()).filter(Boolean);
- const unique=[...new Set(names)];const index=Math.max(0,unique.indexOf('全部')+1);unique.splice(index,0,'VIP');return unique;
+ const unique=[...new Set([...names,'社交表达','创意风格'])];const index=Math.max(0,unique.indexOf('全部')+1);unique.splice(index,0,'VIP');return unique;
 }
+function selectCategory(name){if(!categoryNames().includes(name))return false;if(name==='VIP'&&selectedCategory!=='VIP')beginVipRound();if(selectedCategory!==name){selectedCategory=name;window.TEMPLATE_METRICS?.newRound();}return true;}
 function installCategories(root,state){
  for(const layer of layerData('home'))if(layer.y>=120&&layer.y+layer.h<=177&&layer.h<=55)rememberVisibility(state,node(root,layer.id),'categoryHidden');
  const names=categoryNames();if(!names.includes(selectedCategory))selectedCategory='全部';
@@ -179,5 +180,5 @@ function refreshVisibleCatalog(){
 }
 window.addEventListener('vip-flags-change',refreshVisibleCatalog);
 window.addEventListener('template-catalog-change',refreshVisibleCatalog);
-window.VIP_CATALOG={enhance,isVipTemplate,isVipWallpaper,rankVipBatch,get vipRound(){return vipRound?{...vipRound,seen:[...vipRound.seen],visible:[...vipRound.visible]}:null;},get selectedCategory(){return selectedCategory;},get templates(){return templateSamples.map(templateMeta);}};
+window.VIP_CATALOG={selectCategory,enhance,isVipTemplate,isVipWallpaper,rankVipBatch,get vipRound(){return vipRound?{...vipRound,seen:[...vipRound.seen],visible:[...vipRound.visible]}:null;},get selectedCategory(){return selectedCategory;},get templates(){return templateSamples.map(templateMeta);}};
 })();

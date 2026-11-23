@@ -152,7 +152,7 @@ function materials(){const active=materialCategories.find(x=>x.id===activeMateri
 const events=[
  ['模板点击 · template_click','每次实际点开，保留当时分类和第几位','查看具体模板的点击量和点击位置'],
  ['开始制作 · template_start','图片实际开始制作；视频上传照片后实际开始预览','查看点击后是否继续制作'],
- ['保存成功 · template_save_success','明确保存成功，区分普通/高清/超清及免费/广告/用券/混合','查看具体保存方式；重复成功回调去重'],
+ ['保存成功 · template_save_success','明确保存成功，按普通/高清/超清分别计次','最上方查看各画质保存成功次数；重复回调去重'],
  ['壁纸点击 · wallpaper_click','官方壁纸详情点击；照片3D入口单独归类','查看用户进入了哪张壁纸或照片3D入口'],
  ['照片生成 · wallpaper_generate','照片读取成功后实际点击生成','查看进入照片3D后实际生成的数量'],
  ['壁纸设置成功 · wallpaper_set_success','明确系统成功回报，区分静态和动态；失败/取消/未知不记','官方壁纸和照片3D分别统计结果']

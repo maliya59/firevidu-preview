@@ -85,7 +85,7 @@ function beginUnlock(){refreshWallet();if(!configured(normalAdName())){context.u
 function settleUnlock(){const type=context.kind==='watermark'&&context.choice==='watermark'?'watermark':'general';const used=spend(type,context.used,context.kind==='wallpaper'?'设置壁纸':context.kind==='watermark'?'去水印':'保存');if(used===null){toast('没有足够的可用券');return;}
  if(context.kind==='watermark'){state.watermark=true;go(context.origin,false);persist();toast('已去水印');}
  else if(context.kind==='wallpaper'){pendingWallpaper[wallpaperKey()]=true;remember();applyWallpaper();}
- else{window.TEMPLATE_METRICS?.saveMethod(!configured(normalAdName())?'free':context.used>0?(context.progress>0?'mixed':'coupon'):(context.progress>0?'ad':'free'));lastSaveSpend=used;state.unlocks[state.quality+'-'+state.type]=true;finishSave();}
+ else{window.INVITE_UI?.noteSaveUnlock(!configured(normalAdName())?'free':context.used>0?(context.progress>0?'mixed':'coupon'):(context.progress>0?'ad':'free'));lastSaveSpend=used;state.unlocks[state.quality+'-'+state.type]=true;finishSave();}
 }
 /* 设置适配器只返回明确回执。默认适配器仅演示成功，不会更改系统壁纸。 */
 let wallpaperAttempt=null,wallpaperAttemptSequence=0;
