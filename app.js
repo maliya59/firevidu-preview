@@ -27,7 +27,15 @@ function profile(){go(state.logged?'profile-in':'profile');}
 function nav(root,k){const es=entries(k);for(const label of ['首页','作品','我的']){const l=es.find(x=>x.type==='text'&&x.text===label&&x.y>650);if(l)region(root,k,'底部导航 · '+label,Math.max(0,l.x-25),l.y-35,100,74,()=>label==='首页'?go('home'):label==='作品'?go(state.deleted.length>=3?'empty':'works'):profile());}}
 function attachBack(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&x.nativeName==='返回'))region(root,k,'返回',l.x-5,l.y-5,l.w+10,l.h+10,()=>{if(k==='creating')openModal('exit-creating');else if(k==='confirm-video')go('save-video',false);else if(k==='save-video')go('detail-video',false);else if(k==='save-image')openModal('exit-save');else back();});}
 function ads(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&/关闭|删除/.test(x.nativeName)&&x.w<=24&&x.y>600))region(root,k,'关闭横幅广告',l.x-4,l.y-4,l.w+8,l.h+8,()=>hideBanner(root,k));}
-function hideBanner(root,k){const gs=entries(k).filter(x=>x.type==='group'&&x.w>=300&&x.h<=75&&x.y>600);for(const g of gs)hide(root,g);status('已关闭本页横幅广告（本地演示）');}
+function hideBanner(root,k){
+ const layers=entries(k),labels=layers.filter(x=>x.type==='text'&&/横幅广告\s*Banner/i.test(x.text));
+ for(const label of labels){
+  const group=layers.filter(x=>x.type==='group'&&x.w>=300&&x.h<=75&&label.x>=x.x&&label.y>=x.y&&label.x+label.w<=x.x+x.w&&label.y+label.h<=x.y+x.h).sort((a,b)=>a.w*a.h-b.w*b.h)[0];
+  if(group)hide(root,group);
+ }
+ for(const close of root.querySelectorAll('[data-action="关闭横幅广告"]'))close.hidden=true;
+ status('已关闭本页横幅广告（本地演示）');
+}
 function start(type,metadata){if(window.NEW_UI?.requestPreparedRetryExit(()=>start(type,metadata)))return;window.NEW_UI?.clearPreparedRetry();window.RETRY_PHOTOS?.reset();window.VIP_ACCESS?.selectTemplate(metadata||{id:'ordinary-'+type,type,vip:false});window.TEMPLATE_METRICS?.start(metadata);state.type=type;state.watermark=false;state.quality='hd';state.uploaded=0;state.unlocks={};go(type==='video'?'detail-video':'detail-image');}
 function adAllowed(name){const audience=window.NEW_UI?.member.active&&state.logged?'member':'regular';return window.AD_CONFIG?window.AD_CONFIG.isEnabled(name,audience):window.ADMIN_UI?.adEnabled(name,audience)!==false;}
 function startCreating(){if(!['detail-image','detail-video'].includes(state.screen))return;if(!state.uploaded&&!window.NEW_UI?.hasPreparedRetry()){toast(state.type==='video'?'请先上传照片，再开始预览':'请先上传照片，再开始制作');return;}if(window.NEW_UI?.beginPreparedRetry(()=>startCreatingCore(true)))return;const proceed=()=>startCreatingCore();if(window.VIP_ACCESS?.beforeCreate(proceed))return;return proceed();}
