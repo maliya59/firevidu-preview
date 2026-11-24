@@ -4,7 +4,7 @@ const S='firevidu-ad-review-v26',E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':
 let saved={daily:{},reward:{},lastFull:0,counts:{},rewardSequence:0,settings:{B01:true,B02:true,O01:true,O04:true}},session={seen:new Set(),n:0},visit=null,detail=null,full=null,background=0,resumeVisit=null,playback=null,rewardDayTimer=null,pendingConfigRefresh=false;
 try{const stored=JSON.parse(localStorage.getItem(S)||'{}'),record=value=>value&&typeof value==='object'&&!Array.isArray(value);if(record(stored)){for(const key of ['daily','reward','counts','settings'])if(record(stored[key]))saved[key]=stored[key];if(Number.isFinite(stored.lastFull)&&stored.lastFull>=0)saved.lastFull=stored.lastFull;if(Number.isSafeInteger(stored.rewardSequence)&&stored.rewardSequence>=0)saved.rewardSequence=stored.rewardSequence;}}catch{}
 for(const [key,value]of Object.entries(saved.reward)){if(!value||typeof value!=='object'||Array.isArray(value)){delete saved.reward[key];continue;}value.count=Number.isSafeInteger(value.count)&&value.count>=0?Math.min(5,value.count):value.granted?1:0;if(!Number.isFinite(value.failedAt))value.failedAt=!value.granted&&Number.isFinite(value.at)?value.at:0;delete value.granted;value.pending=false;}
-const remember=()=>{try{localStorage.setItem(S,JSON.stringify(saved));}catch{}},ordinary=()=>{window.NEW_UI?.refresh();return !(state.logged&&window.NEW_UI?.member.active);},appVisible=()=>!document.hidden&&document.body.dataset.workspace!=='admin'&&!full,enabled=(id,context={})=>saved.settings[id]!==false&&ordinary()&&(window.AD_CONFIG?.isEnabled(slots[id],'regular',context)!==false),now=()=>Date.now();
+const remember=()=>{try{localStorage.setItem(S,JSON.stringify(saved));}catch{}},ordinary=()=>{window.NEW_UI?.refresh();return !(state.logged&&window.NEW_UI?.member.active);},appVisible=()=>!document.hidden&&document.body.dataset.workspace!=='admin'&&!full,enabled=(id,context={})=>saved.settings[id]!==false&&(id==='B02'||ordinary())&&(window.AD_CONFIG?.isEnabled(slots[id],id==='B02'&&!ordinary()?'member':'regular',context)!==false),now=()=>Date.now();
 const slots={B01:'模板浏览返回插页广告',B02:'券包自愿领券激励广告',O01:'壁纸首页原生广告',O04:'壁纸首页底部横幅广告'};
 // The original backend table specifies returning after at least three minutes in the background.
 const RESUME_BACKGROUND_MS=180000;
@@ -12,14 +12,14 @@ const resumeBrowsingScreens=new Set(['home','search','no-search','categories','w
 const rules={
  resume:'回前台开屏：返回桌面后，在后台连续满3分钟再回来，展示一次开屏广告，关闭后回到原页面。普通用户和会员各用独立开关，继承原有配置。不打断广告、选券、保存、输入、会员确认或其他进行中的任务；本次不适合展示就跳过，不补弹，不计入模板浏览返回插页次数。',
  B01:'返回模板列表插页：只浏览未改照片，前台可见累计满10秒；同会话同模板只计一次，每3次有效浏览判断一次。每日最多2次；距任意全屏结束至少120秒。跳过也清空本轮3次，不排队补弹。会员不新增。广告关闭后保留原栏目、搜索和滚动位置。',
- B02:'主动看1条激励领1张当日通用券：仅登录普通用户，每账号每个印度业务日最多成功领取5次，每次1张。奖励完成后发券，印度次日00:00到期；取消或未完成不发券、不占5次领取机会，失败后间隔60秒可重试，成功可继续领取。每次领取事务去重，不抵VIP额外体验；跨日按奖励完成日期计。正式版需服务端核验及跨设备去重。',
+ B02:'主动看1条激励领1张当日通用券：普通用户和会员均可主动领取，未登录先登录；每账号每个印度业务日最多成功领取5次，每次1张。奖励完成后发券，印度次日00:00到期；取消或未完成不发券、不占5次领取机会，失败后间隔60秒可重试，成功可继续领取。每次领取事务去重，不抵VIP额外体验；跨日按奖励完成日期计。正式版需服务端核验及跨设备去重。',
  O01:'壁纸列表原生广告与壁纸卡片等大，只在列表中插入单格：前8个真实内容后1个，以后每6个内容后1个，即8、14、20、26…之后。广告不占内容配额，不参与排序；类型/搜索开启新列表后重新按内容计数，同一轮返回和翻页不重复请求已安排槽位。无填充跳过，不晚到补插。',
  O04:'壁纸首页底部横幅：固定在底部导航上方，与列表原生同时存在，独立开关。单次访问一个实例，切类型、搜索和详情返回不刷新；没有自动轮播刷新，无广告时不留空白。普通用户本地默认开启，会员默认关闭。'
 };
 const details={
  wallpaper:'新增壁纸模块：全部、静态、视频、3D四类；按创建入口归类。名称搜索始终查找全部已上架壁纸，不受当前分类限制。精选、VIP可同时存在。支持预览、三个设置目标、静态或动态选择、选券、成功失败回执、历史再次设置及个人照片生成3D。',
  wallpaperHistory:'本页查看用户已使用过的壁纸，包括个人照片创建并使用的3D壁纸。已经成功使用过3D或视频动态效果：再次设置动态只播放1次插页广告，不再看激励广告；再次设为静态无需任何广告。只使用过静态效果：首次升级3D或视频动态仍需正常解锁2次激励，可用通用券抵扣。已完成的动态解锁资格不重复扣券或观看激励，后续动态复用按插页规则；有效VIP免历史动态再设插页。',
- feedback:'本次结果新增问题反馈：登录后选择问题类型并提交，感谢反馈后符合条件才提示免费重做。每日最多2次；回原模板可更换照片，开始制作免制作前插页，退出会提示失去本次机会。保存广告不免。',
+ feedback:'图片结果新增问题反馈：登录后选择问题类型并提交，感谢反馈后符合条件才提示免费重做。每日最多2次；回原模板可更换照片，开始制作免制作前插页，退出会提示失去本次机会。保存广告不免。',
  coupon:'新增两类免广告券：通用券抵正常保存、去水印及壁纸激励；专用券只抵去水印。默认0张，主动选择，优先扣快过期券；显示来源、到期及使用/过期记录；失败按原期限返券。',
  member:'新增周卡/月卡/年卡会员，左右滑动卡片展示各自价格与权益：周卡7×24小时，每期开始默认发7张；月卡和年卡每月周期开始默认发30张；每天默认3张日券，印度当日有效。提前续费从已付款期限末尾接续，新周期开始才发券。VIP内容免额外体验广告；会员广告独立配置。付款确认才有会员行，状态有效、已到期或已退款。',
  invite:'新增两阶段邀请奖励：好友注册，邀请人得去水印券；好友首次实际看广告并高清保存成功，双方各得通用券。券15天有效，每天最多5位新好友计奖，进度直接展示。',
@@ -28,7 +28,7 @@ const details={
  admin:'后台新增五种创建入口、壁纸上传/3D拆分演示、手机比例预览、草稿继续编辑、取消创建、必填翻译完成才能上架、模板VIP筛选及壁纸VIP/精选筛选、会员订单及用券到期记录、反馈时间顺序和提交时剩余重试次数快照。'
 };
 function dot(el,title,body){if(!el||el.querySelector(':scope>.review-dot')||el.classList.contains('review-dot'))return;if(getComputedStyle(el).position==='static')el.classList.add('review-anchor');const b=document.createElement('span');b.className='review-dot';b.tabIndex=0;b.setAttribute('role','note');b.setAttribute('aria-label','新增内容说明：'+title);b.dataset.helpTitle='新增 · '+title;b.dataset.help=body;b.dataset.helpStatus='本地原型';b.onclick=e=>{e.preventDefault();e.stopPropagation();window.FIELD_HELP?.show({title:'新增 · '+title,description:body,status:'本地原型'},{x:b.getBoundingClientRect().right,y:b.getBoundingClientRect().bottom});};el.appendChild(b);}
-function showFull(id,done){const resume=id==='resume';if(full||(!resume&&!ordinary()))return false;stopTimer();const previousFocus=document.activeElement;full={id,done,start:now()};updateDetailVisibility();saved.lastFull=now();remember();const el=document.createElement('div');el.className='review-fullscreen'+(resume?' review-resume-ad':'');el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label',resume?'回前台开屏广告':id+'新增广告');if(resume)el.dataset.adPlacement='resume';el.innerHTML=`<strong>${resume?'开屏广告':id==='B01'?'插页广告':'激励广告'}</strong><small>${resume?'返回桌面再回来':id} · 本地模拟，未接入真实广告</small><button data-review-complete>${resume?'关闭广告并返回原页面':id==='B01'?'关闭广告并返回列表':'模拟完整观看并获得奖励'}</button>${id==='B02'?'<button data-review-cancel>取消观看</button>':''}`;el.dataset.helpTitle=resume?'回前台开屏广告':id;el.dataset.help=rules[id];$('#phone').append(el);if(!resume)dot(el,id,rules[id]);const end=reward=>{if(!full)return;const task=full;full=null;el.remove();saved.lastFull=now();remember();updateDetailVisibility();task.done(reward);if(previousFocus?.isConnected)previousFocus.focus?.({preventScroll:true});};el.querySelector('[data-review-complete]').onclick=()=>end(true);el.querySelector('[data-review-cancel]')?.addEventListener('click',()=>end(false));el.querySelector('[data-review-complete]')?.focus?.();return true;}
+function showFull(id,done){const resume=id==='resume';if(full||(!resume&&id!=='B02'&&!ordinary())||(id==='B02'&&(!state.logged||!enabled('B02'))))return false;stopTimer();const previousFocus=document.activeElement;full={id,done,start:now()};updateDetailVisibility();saved.lastFull=now();remember();const el=document.createElement('div');el.className='review-fullscreen'+(resume?' review-resume-ad':'');el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label',resume?'回前台开屏广告':id+'新增广告');if(resume)el.dataset.adPlacement='resume';el.innerHTML=`<strong>${resume?'开屏广告':id==='B01'?'插页广告':'激励广告'}</strong><small>${resume?'返回桌面再回来':id} · 本地模拟，未接入真实广告</small><button data-review-complete>${resume?'关闭广告并返回原页面':id==='B01'?'关闭广告并返回列表':'模拟完整观看并获得奖励'}</button>${id==='B02'?'<button data-review-cancel>取消观看</button>':''}`;el.dataset.helpTitle=resume?'回前台开屏广告':id;el.dataset.help=rules[id];$('#phone').append(el);if(!resume)dot(el,id,rules[id]);const end=reward=>{if(!full)return;const task=full;full=null;el.remove();saved.lastFull=now();remember();updateDetailVisibility();task.done(reward);if(previousFocus?.isConnected)previousFocus.focus?.({preventScroll:true});};el.querySelector('[data-review-complete]').onclick=()=>end(true);el.querySelector('[data-review-cancel]')?.addEventListener('click',()=>end(false));el.querySelector('[data-review-complete]')?.focus?.();return true;}
 function safeResumeSurface(){
  if(document.body.dataset.workspace==='admin'||full||state.modal)return false;
  const screen=state.screen,pureTemplateBrowse=['detail-image','detail-video'].includes(screen)&&detail&&!detail.dirty&&!state.uploaded;
@@ -60,14 +60,15 @@ function rewardRecord(date=day()){
 }
 function rewardEntry(root){
  const body=root.querySelector('.confirmed-body');if(!body)return;
- if(!enabled('B02')||!state.logged){body.querySelector('.review-coupon-entry')?.remove();return;}
+ if(!enabled('B02')){body.querySelector('.review-coupon-entry')?.remove();return;}
  const button=body.querySelector('.review-coupon-entry')||document.createElement('button');button.className='review-coupon-entry';button.dataset.newAd='B02';button.type='button';
- const r=rewardRecord(),remaining=5-r.count;
- const label=`激励广告 · ${remaining?'看1条视频，领1张当日通用券':'今日已领满，明日再来'}<br><small>今日已领 ${r.count}/5 · 还可领取 ${remaining} 次</small><br><small>印度时间 ${day()} 24:00到期</small>`;
+ const r=state.logged?rewardRecord():{count:0,pending:false},remaining=5-r.count;
+ const label=`激励广告 · ${!state.logged?'登录后看视频，领1张当日通用券':remaining?'看1条视频，领1张当日通用券':'今日已领满，明日再来'}<br><small>今日已领 ${r.count}/5 · 还可领取 ${remaining} 次</small><br><small>印度时间 ${day()} 24:00到期</small>`;
  if(button.dataset.rewardLabel!==label){button.dataset.rewardLabel=label;button.innerHTML=label;}
  button.disabled=remaining===0||r.pending;button.dataset.helpTitle='B02 自愿领券';button.dataset.help=rules.B02;
  button.onclick=()=>{
-  if(!enabled('B02')||!state.logged)return;
+  if(!enabled('B02'))return;
+  if(!state.logged){window.NEW_UI?.loginForCouponReward(()=>{if(state.screen!=='new-coupons')return;render();$('#screen').querySelector('.review-coupon-entry')?.click();});return;}
   const current=rewardRecord();if(current.count>=5||current.pending)return;
   if(current.failedAt&&now()-current.failedAt<60000){toast('本次未完成，请在60秒后重试；不扣领取次数');return;}
   const attempt={id:'B02-attempt-'+(++saved.rewardSequence),settled:false};current.pending=true;current.pendingId=attempt.id;remember();
@@ -97,9 +98,9 @@ function annotate(){
  if(oneSheet){const target=[...root.querySelectorAll('.wf-text,p,strong')].find(e=>/需要解锁|本次设置需解锁/.test(e.textContent));mark(target,'新增用券抵扣弹层',newFeature('本弹层集中展示所需权益、主动选券和剩余广告条数；VIP额外体验不可用券。'));}
  else{
   for(const tab of root.querySelectorAll('.new-nav button')){const name=tab.getAttribute('aria-label');if(name==='壁纸')mark(tab,'壁纸',details.wallpaper);if(name==='我的')mark(tab,'个人中心新增入口',step(1,'我的 → 会员中心 / 邀请有礼 / 我的券',details.member+' '+details.invite+' '+details.coupon));if(name==='作品')mark(tab,'壁纸记录',step(2,'作品 → 壁纸记录',details.wallpaperHistory));}
-  const firstTemplate=root.querySelector('.native-template-badges,.vip-template-card');mark(firstTemplate,'模板累计新增流程','图片模板还需2步到反馈入口：打开模板 → 开始制作 → 制作完成页；视频模板还需4步：打开模板 → 开始制作 → 选择画质保存 → 确认保存 → 保存成功页。登录与广告完成条件另计。'+details.badges+' '+details.feedback+' '+rules.B01);
+  const firstTemplate=root.querySelector('.native-template-badges,.vip-template-card');mark(firstTemplate,'模板累计新增流程','图片模板还需2步到反馈入口：打开模板 → 开始制作 → 制作完成页。登录与广告完成条件另计。'+details.badges+' '+details.feedback+' '+rules.B01);
   mark(root.querySelector('[data-vip-category="VIP"]'),'VIP模板栏目',details.vip);
-  if(['detail-image','detail-video'].includes(k))mark(action('开始制作'),'后续新增功能',step(k==='detail-video'?3:1,k==='detail-video'?'开始制作 → 选择画质保存 → 确认保存 → 保存成功页的问题反馈':'开始制作 → 制作完成页的问题反馈',details.feedback+' '+details.vip));
+  if(k==='detail-image')mark(action('开始制作'),'后续新增功能',step(1,'开始制作 → 制作完成页的问题反馈',details.feedback+' '+details.vip));
   if(['complete','save-video','work-image'].includes(k))mark(action('高清保存'),'新增用券抵扣',newFeature('高清、超清和去水印共用这一条新增说明。高清需1次、超清需2次正常激励；有资格不重复解锁，会员券和邀请券可主动使用。'));
   if(['save-image','confirm-video'].includes(k))mark(action('去水印')||action('右上角去水印'),'新增用券抵扣',newFeature('本保存预览页只标一个抵扣说明点。去水印可主动用专用券或通用券；高清或超清保存可用通用券，普通保存的确认仍免费。'));
   mark(root.querySelector('.native-feedback-hit,.native-feedback-link'),'问题反馈与免费重试',details.feedback);
