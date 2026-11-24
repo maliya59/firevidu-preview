@@ -52,3 +52,35 @@
   border:0;background:transparent;cursor:pointer
  }
 }
+
+#stage:has(#language-selection-note:not([hidden])){
+  gap:24px;
+  padding-inline:12px;
+}
+#language-selection-note{
+  flex:0 0 244px;
+  max-width:calc(100vw - 24px);
+  padding:16px 18px;
+  border:1px solid #e5e0eb;
+  border-radius:10px;
+  background:#f7f6f9;
+  color:#686271;
+  font-size:13px;
+  line-height:1.7;
+}
+#language-selection-note strong{
+  font-size:13px;
+  font-weight:600;
+  color:#5e5768;
+}
+#language-selection-note p{margin:8px 0 0}
+@media(max-width:920px){
+  #stage:has(#language-selection-note:not([hidden])){
+    flex-direction:column;
+    justify-content:flex-start;
+    gap:12px;
+    padding-block:6px 16px;
+    overflow-y:auto;
+  }
+  #language-selection-note{flex:none;width:min(375px,100%)}
+}

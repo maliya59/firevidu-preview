@@ -3,7 +3,7 @@ const D=window.UI_DATA, $=s=>document.querySelector(s), NS='http://www.w3.org/20
 const titles={splash:'开屏广告',home:'首页',search:'搜索结果','no-search':'无搜索结果','detail-image':'图片模板详情','detail-video':'视频模板详情',creating:'正在制作',complete:'制作完成','save-image':'保存效果','save-video':'保存效果 · 视频','confirm-video':'保存效果二次确认',saved:'保存成功',works:'作品',empty:'作品 · 缺省页','work-image':'图片作品详情','work-video':'视频作品详情',profile:'我的','profile-in':'我的 · 登录之后',about:'关于我们','ad-image':'插页广告 · 图片','ad-video':'插页广告 · 视频',categories:'全部分类',language:'选择语言',login:'登录弹窗','invite-share':'推荐给朋友 · 分享',logout:'退出登录','edit-profile':'编辑资料',delete:'删除作品','exit-creating':'退出制作确认','stop-creating':'取消制作确认',failed:'制作未成功',watermark:'去水印解锁','exit-save':'退出保存确认','work-share':'作品分享'};
 const groups=[['首页与模板',['splash','language','home','categories','search','no-search','detail-image','detail-video']],['制作与保存',['ad-image','ad-video','creating','exit-creating','stop-creating','failed','complete','save-image','watermark','save-video','confirm-video','exit-save','saved','work-share']],['作品',['works','empty','delete','work-image','work-video']],['个人中心',['profile','login','profile-in','invite-share','logout','edit-profile','about']]];
 const modalKeys=new Set(['language','categories','login','invite-share','logout','edit-profile','delete','exit-creating','stop-creating','failed','watermark','exit-save','work-share']);
-let state={screen:'splash',modal:null,type:'image',quality:'hd',logged:false,name:'谷歌名称',search:'',uploaded:0,watermark:false,unlocks:{},deleted:[],language:'English'};
+let state={screen:'splash',modal:null,type:'image',quality:'hd',logged:false,name:'谷歌名称',search:'',uploaded:0,watermark:false,unlocks:{},deleted:[],language:null,languagePromptSeen:false};
 try{const saved=JSON.parse(localStorage.getItem('firevidu-ui-demo')||'null');if(saved)Object.assign(state,saved,{screen:'splash',modal:null});}catch{}
 let adPresentation='interstitial';
 let stack=[],timer=null,adNext=null,modalReturn=null,deleteTarget=0,profileInput=null,searchInput=null;
@@ -108,8 +108,11 @@ function upload(root,k,number=1){
  if(k==='detail-image'){status('照片已选择，请点击开始制作。');return;}
  startCreating();
 }
-function updateDirectory(){document.querySelectorAll('nav button').forEach(el=>el.classList.toggle('active',el.dataset.key===(state.modal||state.screen)));$('#scene-title').textContent=['ad-image','ad-video'].includes(state.screen)?(adPresentation==='rewarded'?'激励广告':'插页广告'):titles[state.modal||state.screen];}
-function render(){const k=state.screen,root=$('#screen');window.INVITE_UI?.clearPage();root.classList.remove('wallpaper-search-page');if(window.WALLPAPER_RANKING?.renderSearch(k,root)){updateDirectory();fit();return;}if(k==='splash'&&!adAllowed('启动页开屏广告')){go('home',false);openModal('language');return;}if(k==='creating'&&!adAllowed('正在制作激励广告')){state.unlocks['hd-'+state.type]=true;window.INVITE_UI?.noteSaveUnlock('free','hd');}if(window.INVITE_UI?.render(k,root)){updateDirectory();fit();return;}if(window.BILLING_POLICY?.render(k,root)){updateDirectory();fit();return;}if(window.WALLPAPER_V2?.render(k,root)){updateDirectory();fit();return;}if(window.VIP_ACCESS?.render(k,root)){updateDirectory();fit();return;}if(window.NEW_UI?.render(k,root)){window.VIP_CATALOG?.enhance(k,root);window.BILLING_POLICY?.enhance(k,root);window.WALLPAPER_V2?.enhance(k,root);updateDirectory();fit();return;}root.innerHTML=D.svg[k]||'';$('#phone').dataset.height=D.scenes.find(x=>x.key===k)?.height||812;attachBack(root,k);nav(root,k);ads(root,k);updateWatermark(root,k);status('按原稿演示 · 登录、广告与制作均为本地模拟');
+function updateDirectory(){
+ const languageNote=$('#language-selection-note');
+ if(languageNote)languageNote.hidden=state.modal!=='language';
+ document.querySelectorAll('nav button').forEach(el=>el.classList.toggle('active',el.dataset.key===(state.modal||state.screen)));$('#scene-title').textContent=['ad-image','ad-video'].includes(state.screen)?(adPresentation==='rewarded'?'激励广告':'插页广告'):titles[state.modal||state.screen];}
+function render(){const k=state.screen,root=$('#screen');window.INVITE_UI?.clearPage();root.classList.remove('wallpaper-search-page');if(window.WALLPAPER_RANKING?.renderSearch(k,root)){updateDirectory();fit();return;}if(k==='splash'&&!adAllowed('启动页开屏广告')){openHomeAfterSplash();return;}if(k==='creating'&&!adAllowed('正在制作激励广告')){state.unlocks['hd-'+state.type]=true;window.INVITE_UI?.noteSaveUnlock('free','hd');}if(window.INVITE_UI?.render(k,root)){updateDirectory();fit();return;}if(window.BILLING_POLICY?.render(k,root)){updateDirectory();fit();return;}if(window.WALLPAPER_V2?.render(k,root)){updateDirectory();fit();return;}if(window.VIP_ACCESS?.render(k,root)){updateDirectory();fit();return;}if(window.NEW_UI?.render(k,root)){window.VIP_CATALOG?.enhance(k,root);window.BILLING_POLICY?.enhance(k,root);window.WALLPAPER_V2?.enhance(k,root);updateDirectory();fit();return;}root.innerHTML=D.svg[k]||'';$('#phone').dataset.height=D.scenes.find(x=>x.key===k)?.height||812;attachBack(root,k);nav(root,k);ads(root,k);updateWatermark(root,k);status('按原稿演示 · 登录、广告与制作均为本地模拟');
  if(['home','search','no-search'].includes(k)){
   const l=entries(k).find(x=>x.type==='text'&&/搜索内容|已经输入/.test(x.text));searchInput=input(root,k,l,'搜索模板',state.search,v=>state.search=v);if(searchInput){searchInput.classList.add('search-input');searchInput.placeholder='搜索内容搜索内容';searchInput.onkeydown=e=>{if(e.key==='Enter')search();};}
   if(k!=='home')region(root,k,'搜索',321,48,45,36,search);
@@ -141,8 +144,22 @@ function render(){const k=state.screen,root=$('#screen');window.INVITE_UI?.clear
  if(['splash','ad-image','ad-video'].includes(k)){region(root,k,'演示广告完成',0,0,375,812,finishAd);timer=setTimeout(finishAd,k==='splash'?1600:1800);}
  window.NEW_UI?.enhance(k,root);window.VIP_CATALOG?.enhance(k,root);window.BILLING_POLICY?.enhance(k,root);window.WALLPAPER_V2?.enhance(k,root);updateDirectory();fit();window.TEMPLATE_METRICS?.onListRender(k);window.TEMPLATE_METRICS?.decorate();
 }
+const LANGUAGE_OPTIONS = ['English', '简体中文'];
+function preferredSystemLanguage(){
+ const [language, scriptOrRegion] = (navigator.language || '').toLowerCase().split('-');
+ const simplifiedChinese = language === 'zh' && !['hant', 'tw', 'hk', 'mo'].includes(scriptOrRegion);
+ return LANGUAGE_OPTIONS[simplifiedChinese ? 1 : 0];
+}
+function openHomeAfterSplash(){
+ go('home',false);
+ if(state.languagePromptSeen)return;
+ if(!LANGUAGE_OPTIONS.includes(state.language))state.language = preferredSystemLanguage();
+ state.languagePromptSeen = true;
+ persist();
+ openModal('language');
+}
 function search(){state.search=(searchInput?.value||state.search||'').trim();go(!state.search||/模板|人物|照片|king|头像|写真|视频|图片/i.test(state.search)?'search':'no-search');}
-function finishAd(){if(!['splash','ad-image','ad-video'].includes(state.screen))return;stopTimer();if(state.screen==='splash'){go('home',false);openModal('language');return}const target=adNext;adNext=null;if(typeof target==='function')target();else go(target||'creating',false);}
+function finishAd(){if(!['splash','ad-image','ad-video'].includes(state.screen))return;stopTimer();if(state.screen==='splash'){openHomeAfterSplash();return}const target=adNext;adNext=null;if(typeof target==='function')target();else go(target||'creating',false);}
 function closeModal(refresh=true){
  if(state.modal==='login'&&!state.logged)window.NEW_UI?.cancelLoginIntent();
  state.modal=null;$('#modal-host').innerHTML='';if(refresh){updateDirectory();fit();}profileInput=null;}
@@ -150,16 +167,17 @@ function openModal(k){if(k==='work-share'&&window.VIP_ACCESS?.beforeResultAction
 function openModalCore(k){if(k==='watermark'&&window.NEW_UI){window.NEW_UI.unlockWatermark();return;}if(!modalKeys.has(k))return;if(k==='watermark'&&state.watermark){status('当前作品已去水印，本次无需再次解锁');return;}state.modal=k;const host=$('#modal-host');host.innerHTML='';const mask=document.createElement('div');mask.className='modal-mask';mask.onclick=()=>closeModal();host.appendChild(mask);const sheet=document.createElement('div');sheet.className='modal-sheet';const info=D.scenes.find(s=>s.key===k),w=info.width,h=info.height,ph=Number($('#phone').dataset.height);let x=(375-w)/2,y=(ph-h)/2;if(['categories','login','invite-share','edit-profile','work-share'].includes(k)){x=(375-w)/2;y=ph-h;}sheet.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px`;sheet.innerHTML=D.svg[k];host.appendChild(sheet);updateWatermark(sheet,k);if(['categories','login','invite-share','edit-profile','work-share'].includes(k)){const indicator=entries(state.screen).find(l=>l.type==='rectangle'&&/Home Indicator/.test(l.nativeName));if(indicator){const bar=document.createElement('div');bar.className='overlay-mark';bar.style.cssText=`left:${indicator.x}px;top:${ph-16}px;width:${indicator.w}px;height:${indicator.h}px;background:#fff;border-radius:3px;z-index:12;pointer-events:none`;host.appendChild(bar);}}nativeGroup(sheet,k,'关闭',()=>closeModal());
  const close=()=>closeModal();
  if(k==='language'){
-  let selected=state.language==='简体中文'?1:0;
+  const currentLanguage=LANGUAGE_OPTIONS.includes(state.language)?state.language:preferredSystemLanguage();
+  let selected=LANGUAGE_OPTIONS.indexOf(currentLanguage);
   const checked=entries(k).find(l=>l.type==='group'&&l.nativeName==='选择');hide(sheet,checked);
   hide(sheet,entries(k).find(l=>l.type==='rectangle'&&l.nativeName==='矩形备份 2'));
   const rows=[entries(k).find(l=>l.type==='rectangle'&&l.x===15&&l.y===70),entries(k).find(l=>l.type==='rectangle'&&l.x===15&&l.y===130)];
-  for(const [i,label] of ['English','简体中文'].entries()){
+  for(const [i,label] of LANGUAGE_OPTIONS.entries()){
    const row=rows[i];region(sheet,k,label,row.x,row.y,row.w,row.h,()=>{selected=i;paintLanguage();});
    const dot=document.createElement('span');dot.className='language-radio';dot.dataset.index=i;dot.style.cssText=`left:259px;top:${84.5+i*60}px`;sheet.appendChild(dot);
   }
-  function paintLanguage(){rows.forEach((r,i)=>{const e=node(sheet,r.id),shape=e?.matches('rect,path')?e:e?.querySelector('rect,path');if(shape){shape.style.fill=i===selected?'#3b304e':'#2a2336';shape.style.stroke=i===selected?'#dcc8f5':'#493d57';}const dot=sheet.querySelector('.language-radio[data-index="'+i+'"]');dot.classList.toggle('checked',i===selected);sheet.querySelector('[data-action="'+(i?'简体中文':'English')+'"]').setAttribute('aria-pressed',String(i===selected));});}
-  paintLanguage();bind(sheet,k,'Continue',()=>{state.language=selected?'简体中文':'English';persist();close();status('语言选择已保存：'+state.language+'；页面文案沿用原稿')},12);bind(sheet,k,'Not now',close,12);
+  function paintLanguage(){rows.forEach((r,i)=>{const e=node(sheet,r.id),shape=e?.matches('rect,path')?e:e?.querySelector('rect,path');if(shape){shape.style.fill=i===selected?'#3b304e':'#2a2336';shape.style.stroke=i===selected?'#dcc8f5':'#493d57';}const dot=sheet.querySelector('.language-radio[data-index="'+i+'"]');dot.classList.toggle('checked',i===selected);sheet.querySelector('[data-action="'+LANGUAGE_OPTIONS[i]+'"]').setAttribute('aria-pressed',String(i===selected));});}
+  paintLanguage();bind(sheet,k,'Continue',()=>{state.language=LANGUAGE_OPTIONS[selected];persist();close();status('已保存语言偏好 · '+state.language)},12);bind(sheet,k,'Not now',close,12);
  }
  if(k==='categories'){region(sheet,k,'关闭分类',342,10,25,28,close);for(const label of ['全部','精选','庆典祝福','社交表达','亲友关系','宗教祈福','个人形象','节日文化','创意风格'])bind(sheet,k,label,()=>{window.VIP_CATALOG?.selectCategory(label);close();go('home');},16);}
  if(k==='login'){region(sheet,k,'关闭登录弹窗',330,10,30,30,close);bind(sheet,k,'Continue with Google',()=>{state.logged=true;persist();close();if(!window.NEW_UI?.afterLogin())go('profile-in',state.screen!=='profile')},20);}
@@ -199,7 +217,7 @@ window.addEventListener('keydown',event=>{
  }
 },true);
 $('#toggle-directory').onclick=()=>{if(innerWidth<=800)document.body.classList.toggle('directory-open');else document.body.classList.toggle('directory-hidden');requestAnimationFrame(fit)};
-$('#reset').onclick=()=>{stopTimer();state={screen:'splash',modal:null,type:'image',quality:'hd',logged:false,name:'谷歌名称',search:'',uploaded:0,watermark:false,unlocks:{},deleted:[],language:'English'};stack=[];try{localStorage.removeItem('firevidu-ui-demo')}catch{}render()};
+$('#reset').onclick=()=>{stopTimer();closeModal(false);state={screen:'splash',modal:null,type:'image',quality:'hd',logged:false,name:'谷歌名称',search:'',uploaded:0,watermark:false,unlocks:{},deleted:[],language:null,languagePromptSeen:false};stack=[];try{localStorage.removeItem('firevidu-ui-demo')}catch{}render()};
 window.addEventListener('resize',fit);
 window.addEventListener('keydown',event=>{
  if(event.key!=='Escape'||event.defaultPrevented||document.body.dataset.workspace==='admin')return;
