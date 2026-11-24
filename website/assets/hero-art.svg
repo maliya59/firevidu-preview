@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="620" viewBox="0 0 640 620" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Creative worlds in a collection of floating frames</title>
+  <desc id="desc">Original lavender and blush illustrations of a moonlit arch, sculpted dunes and luminous spheres.</desc>
+  <defs>
+    <linearGradient id="leftSky" x1="0" y1="0" x2="150" y2="300" gradientUnits="userSpaceOnUse"><stop stop-color="#594085"/><stop offset=".6" stop-color="#2E254B"/><stop offset="1" stop-color="#171523"/></linearGradient>
+    <linearGradient id="rightSky" x1="0" y1="0" x2="180" y2="320" gradientUnits="userSpaceOnUse"><stop stop-color="#EBC1CE"/><stop offset=".56" stop-color="#BA9ACC"/><stop offset="1" stop-color="#72517F"/></linearGradient>
+    <linearGradient id="heroSky" x1="15" y1="0" x2="240" y2="390" gradientUnits="userSpaceOnUse"><stop stop-color="#D2C6F0"/><stop offset=".42" stop-color="#9C8AC1"/><stop offset="1" stop-color="#56446F"/></linearGradient>
+    <radialGradient id="sunGlow" cx=".5" cy=".5" r=".5"><stop stop-color="#F7DFE5" stop-opacity=".9"/><stop offset="1" stop-color="#F7DFE5" stop-opacity="0"/></radialGradient>
+    <linearGradient id="moon" x1="55" y1="0" x2="110" y2="118" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF6EC"/><stop offset="1" stop-color="#F0B5C6"/></linearGradient>
+    <linearGradient id="archFront" x1="45" y1="76" x2="220" y2="280" gradientUnits="userSpaceOnUse"><stop stop-color="#ECE3EE"/><stop offset=".4" stop-color="#C9B7D7"/><stop offset="1" stop-color="#8F77A5"/></linearGradient>
+    <linearGradient id="archSide" x1="165" y1="90" x2="227" y2="256" gradientUnits="userSpaceOnUse"><stop stop-color="#8D75A3"/><stop offset="1" stop-color="#5A426F"/></linearGradient>
+    <linearGradient id="archInner" x1="89" y1="110" x2="177" y2="264" gradientUnits="userSpaceOnUse"><stop stop-color="#AA94BA"/><stop offset="1" stop-color="#EEE1E3"/></linearGradient>
+    <linearGradient id="farDune" x1="56" y1="218" x2="176" y2="302" gradientUnits="userSpaceOnUse"><stop stop-color="#E1C4DA"/><stop offset="1" stop-color="#B193BD"/></linearGradient>
+    <linearGradient id="frontDune" x1="92" y1="283" x2="203" y2="405" gradientUnits="userSpaceOnUse"><stop stop-color="#B8A5D0"/><stop offset=".6" stop-color="#806B9C"/><stop offset="1" stop-color="#4A3B63"/></linearGradient>
+    <linearGradient id="ribbonDune" x1="76" y1="270" x2="195" y2="383" gradientUnits="userSpaceOnUse"><stop stop-color="#F0D9E2"/><stop offset="1" stop-color="#9C84B4"/></linearGradient>
+    <linearGradient id="peachDune" x1="15" y1="180" x2="200" y2="310" gradientUnits="userSpaceOnUse"><stop stop-color="#EBD0D8"/><stop offset=".5" stop-color="#CBA7BF"/><stop offset="1" stop-color="#9A759D"/></linearGradient>
+    <radialGradient id="sphere" cx=".3" cy=".2" r=".8"><stop stop-color="#E5DDF9"/><stop offset=".34" stop-color="#B6A1E3"/><stop offset=".77" stop-color="#79618F"/><stop offset="1" stop-color="#4F3D65"/></radialGradient>
+    <radialGradient id="pinkSphere" cx=".25" cy=".2" r=".8"><stop stop-color="#FFE5E8"/><stop offset=".35" stop-color="#F0B5C6"/><stop offset=".8" stop-color="#BB86AB"/><stop offset="1" stop-color="#846384"/></radialGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="200" y2="390" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF4FF" stop-opacity=".7"/><stop offset=".38" stop-color="#D4C5ED" stop-opacity=".24"/><stop offset="1" stop-color="#B6A1FF" stop-opacity=".38"/></linearGradient>
+    <linearGradient id="playCircle" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF6FF" stop-opacity=".28"/><stop offset="1" stop-color="#5C426E" stop-opacity=".55"/></linearGradient>
+    <filter id="shadow" x="-70%" y="-45%" width="240%" height="210%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="26" stdDeviation="20" flood-color="#000" flood-opacity=".3"/><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity=".16"/></filter>
+    <filter id="soft" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="7"/></filter>
+    <clipPath id="leftClip"><rect width="194" height="306" rx="20"/></clipPath>
+    <clipPath id="rightClip"><rect width="184" height="300" rx="20"/></clipPath>
+    <clipPath id="heroClip"><rect width="250" height="390" rx="23"/></clipPath>
+  </defs>
+
+  <!-- The two smaller canvases sit behind the main artwork. -->
+  <g transform="translate(52 181) rotate(-14 97 153)" filter="url(#shadow)">
+    <g clip-path="url(#leftClip)">
+      <rect width="194" height="306" fill="url(#leftSky)"/>
+      <circle cx="80" cy="85" r="80" fill="url(#sunGlow)" opacity=".15"/>
+      <circle cx="76" cy="79" r="35" fill="#F2DCE8"/>
+      <circle cx="88" cy="68" r="34" fill="#554178"/>
+      <path d="M-27 210C27 158 76 164 116 191C151 215 174 208 219 172V306H-27Z" fill="#7D6A9D"/>
+      <path d="M-22 242C18 206 58 200 103 213C141 223 164 250 210 243V306H-22Z" fill="#493A65"/>
+      <path d="M42 229V155C42 111 73 96 97 96C122 96 152 111 152 155V229H131V157C131 130 116 118 97 118C78 118 63 130 63 157V229Z" fill="#B6A1DD"/>
+      <path d="M152 155V229L164 223V152C164 110 132 89 109 89L97 96C122 96 152 111 152 155Z" fill="#77618F"/>
+      <path d="M42 229L53 221H75L63 229Z" fill="#CEBCE9"/>
+      <path d="M-12 271C61 234 116 226 201 253V306H-12Z" fill="#272139"/>
+      <circle cx="143" cy="261" r="17" fill="url(#sphere)"/>
+      <ellipse cx="142" cy="281" rx="21" ry="4" fill="#15111D" opacity=".3" filter="url(#soft)"/>
+    </g>
+    <rect x=".65" y=".65" width="192.7" height="304.7" rx="19.35" stroke="url(#edge)" stroke-width="1.3"/>
+  </g>
+
+  <g transform="translate(409 127) rotate(13 92 150)" filter="url(#shadow)">
+    <g clip-path="url(#rightClip)">
+      <rect width="184" height="300" fill="url(#rightSky)"/>
+      <circle cx="124" cy="77" r="72" fill="url(#sunGlow)" opacity=".7"/>
+      <circle cx="128" cy="77" r="28" fill="#FAE1E2"/>
+      <path d="M-13 189C29 150 80 154 119 178C157 201 175 196 205 170V300H-13Z" fill="#AA8AB5"/>
+      <path d="M-12 219C25 177 76 176 115 203C151 229 175 232 210 206V300H-12Z" fill="url(#peachDune)"/>
+      <path d="M-15 266C36 222 92 229 124 245C158 263 177 270 208 247V300H-15Z" fill="#9B77A2"/>
+      <path d="M33 300C65 260 100 239 161 215C136 244 116 272 104 300" fill="#E6C8D8"/>
+      <ellipse cx="39" cy="235" rx="24" ry="6" fill="#755478" opacity=".3" filter="url(#soft)"/>
+      <circle cx="40" cy="215" r="23" fill="url(#pinkSphere)"/>
+      <path d="M5 293C52 273 92 273 146 286" stroke="#E6BCD4" stroke-opacity=".42"/>
+    </g>
+    <rect x=".65" y=".65" width="182.7" height="298.7" rx="19.35" stroke="url(#edge)" stroke-width="1.3"/>
+  </g>
+
+  <!-- A moonlit architectural landscape, drawn solely from vector geometry. -->
+  <g transform="translate(194 80) rotate(-4 125 195)" filter="url(#shadow)">
+    <g clip-path="url(#heroClip)">
+      <rect width="250" height="390" fill="url(#heroSky)"/>
+      <circle cx="122" cy="82" r="119" fill="url(#sunGlow)" opacity=".68"/>
+      <circle cx="121" cy="85" r="48" fill="url(#moon)"/>
+      <path d="M-10 262C44 224 76 228 108 243C142 259 169 247 208 221C231 205 247 207 267 216V390H-10Z" fill="url(#farDune)"/>
+      <path d="M64 259V159C64 111 93 82 132 82C171 82 202 111 202 159V259H176V161C176 131 158 111 132 111C107 111 90 131 90 161V259Z" fill="url(#archFront)"/>
+      <path d="M132 82C171 82 202 111 202 159V259L218 248V152C218 106 187 75 148 75Z" fill="url(#archSide)"/>
+      <path d="M90 161C90 131 107 111 132 111C143 111 152 114 160 121C127 111 106 133 106 165V247L90 259Z" fill="url(#archInner)"/>
+      <path d="M64 259L80 247H106L90 259Z" fill="#E2D3E7"/>
+      <path d="M176 259L192 247H218L202 259Z" fill="#9C82B2"/>
+      <path d="M-13 302C36 259 81 248 123 264C172 282 203 289 268 250V390H-13Z" fill="url(#ribbonDune)"/>
+      <path d="M-14 334C49 293 83 299 123 318C168 339 206 326 265 300V390H-14Z" fill="url(#frontDune)"/>
+      <path d="M-8 389C21 351 67 323 124 301C149 291 169 285 199 282C164 301 140 328 120 355C109 371 102 383 99 396" fill="#D5BDDA" opacity=".7"/>
+      <path d="M-7 390C30 359 70 337 121 317" stroke="#E9D7E8" stroke-opacity=".62"/>
+      <ellipse cx="186" cy="335" rx="33" ry="8" fill="#46324F" opacity=".28" filter="url(#soft)"/>
+      <circle cx="185" cy="306" r="29" fill="url(#sphere)"/>
+      <circle cx="44" cy="302" r="12" fill="url(#pinkSphere)"/>
+      <path d="M0 369C68 345 127 345 250 369" stroke="#F0D8E6" stroke-opacity=".14"/>
+      <g transform="translate(184 324)">
+        <circle cx="23" cy="23" r="22.5" fill="url(#playCircle)" stroke="#F8ECFF" stroke-opacity=".44"/>
+        <path d="M19 15.5C19 14.8 19.8 14.4 20.4 14.8L31.2 21.8C31.9 22.2 31.9 23.2 31.2 23.7L20.4 30.7C19.8 31.1 19 30.7 19 30Z" fill="#FFF5FF"/>
+      </g>
+    </g>
+    <rect x=".75" y=".75" width="248.5" height="388.5" rx="22.25" stroke="url(#edge)" stroke-width="1.5"/>
+  </g>
+
+  <!-- Small sculptural details continue the scene beyond the canvases. -->
+  <ellipse cx="453" cy="499" rx="38" ry="9" fill="#000" opacity=".18" filter="url(#soft)"/>
+  <circle cx="453" cy="470" r="25" fill="url(#pinkSphere)"/>
+  <circle cx="164" cy="114" r="8" fill="url(#sphere)" opacity=".8"/>
+  <path d="M488 79V87M484 83H492" stroke="#D2BCEE" stroke-width="1.25" stroke-linecap="round" opacity=".55"/>
+</svg>
