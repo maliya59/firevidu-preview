@@ -5,7 +5,7 @@ const groups=[['首页与模板',['splash','language','home','categories','searc
 const modalKeys=new Set(['language','categories','login','invite-share','logout','edit-profile','delete','exit-creating','stop-creating','failed','watermark','exit-save','work-share']);
 let state={screen:'splash',modal:null,type:'image',quality:'hd',logged:false,name:'谷歌名称',search:'',uploaded:0,watermark:false,unlocks:{},deleted:[],language:null,languagePromptSeen:false};
 try{const saved=JSON.parse(localStorage.getItem('firevidu-ui-demo')||'null');if(saved)Object.assign(state,saved,{screen:'splash',modal:null});}catch{}
-let adPresentation='interstitial';
+let adPresentation='interstitial',trialAd=null;
 let stack=[],timer=null,adNext=null,modalReturn=null,deleteTarget=0,profileInput=null,searchInput=null;
 function persist(){try{localStorage.setItem('firevidu-ui-demo',JSON.stringify({...state,screen:'home',modal:null}));}catch{}}
 function status(s){$('#demo-status').textContent=s;}
@@ -21,7 +21,7 @@ function nativeGroup(root,k,name,fn){for(const l of entries(k).filter(x=>x.type=
 function input(root,k,l,label,value,onchange){if(!l)return null;hide(root,l);const el=document.createElement('input');el.className='text-input';el.setAttribute('aria-label',label);el.value=value;el.style.cssText=`left:${l.x}px;top:${l.y}px;width:${l.w}px;height:${Math.max(22,l.h)}px`;el.oninput=()=>onchange(el.value);if(label==='昵称'){el.style.width='275px';}if(label==='搜索模板'){el.style.width='240px';}root.appendChild(el);return el;}
 function fit(){const h=Number($('#phone').dataset.height||812),available=$('#stage').getBoundingClientRect(),s=Math.min(1,(available.height-12)/h,(available.width-24)/375);$('#phone').style.height=h+'px';$('#phone').style.transform=`scale(${s})`;$('#phone-wrap').style.width=375*s+'px';$('#phone-wrap').style.height=h*s+'px';}
 function stopTimer(){if(timer){clearInterval(timer);clearTimeout(timer);timer=null;}}
-function go(k,record=true){if(window.AD_REVIEW?.beforeGo(k,record))return;const retry=window.NEW_UI?.preparedRetry;if(retry&&k!==retry.screen){if(window.NEW_UI.requestPreparedRetryExit(()=>go(k,record)))return;window.NEW_UI.clearPreparedRetry();}window.TEMPLATE_METRICS?.onNavigate(k,record,state.screen);document.querySelector('.demo-toast')?.remove();stopTimer();closeModal(false);if(record&&state.screen!==k)stack.push(state.screen);state.screen=k;render();persist();}
+function go(k,record=true){if(window.AD_REVIEW?.beforeGo(k,record))return;const retry=window.NEW_UI?.preparedRetry;if(retry&&k!==retry.screen){if(window.NEW_UI.requestPreparedRetryExit(()=>go(k,record)))return;window.NEW_UI.clearPreparedRetry();}if(!['ad-image','ad-video'].includes(k))trialAd=null;window.TEMPLATE_METRICS?.onNavigate(k,record,state.screen);document.querySelector('.demo-toast')?.remove();stopTimer();closeModal(false);if(record&&state.screen!==k)stack.push(state.screen);state.screen=k;render();persist();}
 function back(){
  if(state.modal){closeModal();return;}
  if(window.NEW_UI?.exitPreparedRetry())return;
@@ -59,9 +59,53 @@ function hideBanner(root,k){
 }
 function start(type,metadata){if(window.NEW_UI?.requestPreparedRetryExit(()=>start(type,metadata)))return;window.NEW_UI?.clearPreparedRetry();window.RETRY_PHOTOS?.reset();window.VIP_ACCESS?.selectTemplate(metadata||{id:'ordinary-'+type,type,vip:false});window.TEMPLATE_METRICS?.start(metadata);state.type=type;state.watermark=false;state.quality='hd';state.uploaded=0;state.imagePhotoSlots=[];state.unlocks={};go(type==='video'?'detail-video':'detail-image');}
 function adAllowed(name){const audience=window.NEW_UI?.member.active&&state.logged?'member':'regular';return window.AD_CONFIG?window.AD_CONFIG.isEnabled(name,audience):window.ADMIN_UI?.adEnabled(name,audience)!==false;}
-function startCreating(){if(!['detail-image','detail-video'].includes(state.screen))return;if(!window.NEW_UI?.hasPreparedRetry()&&(!state.uploaded||(state.screen==='detail-image'&&!imagePhotoSlots().includes(1)))){toast(state.type==='video'?'请先上传照片，再开始预览':'请先上传照片，再开始制作');return;}if(window.NEW_UI?.beginPreparedRetry(()=>startCreatingCore(true)))return;const proceed=()=>startCreatingCore();if(window.VIP_ACCESS?.beforeCreate(proceed))return;return proceed();}
+function startCreating(){if(!['detail-image','detail-video'].includes(state.screen))return;if(!window.NEW_UI?.hasPreparedRetry()&&(!state.uploaded||(state.screen==='detail-image'&&!imagePhotoSlots().includes(1)))){toast(state.type==='video'?'请先上传照片，再开始预览':'请先上传照片，再开始制作');return;}if(window.NEW_UI?.beginPreparedRetry(()=>startCreatingCore(true)))return;const proceed=({skipInterstitial=false}={})=>startCreatingCore(skipInterstitial);if(window.VIP_ACCESS?.beforeCreate(proceed))return;return proceed();}
 function startCreatingCore(skipInterstitial=false){if(!state.uploaded){toast(state.type==='video'?'请先上传照片，再开始预览':'请先上传照片，再开始制作');return;}window.TEMPLATE_METRICS?.create();if(state.type==='video'){state.videoSaving=false;go('save-video');return;}if(skipInterstitial||!adAllowed('制作同款开始制作插页广告')){go('creating');return;}adPresentation='interstitial';window.AD_REVIEW?.setPlayback('interstitial','detail-image');adNext='creating';go('ad-image');}
-function playAd(done,base=state.screen,adType='rewarded'){adPresentation=adType;window.AD_REVIEW?.setPlayback(adType,base);const ad=state.type==='video'?'ad-video':'ad-image';adNext=()=>{go(base,false);done();};go(ad,false);}
+function playAd(done,base=state.screen,adType='rewarded',trial=null){
+ adPresentation=adType;
+ trialAd=trial&&{...trial,ready:adType==='interstitial'};
+ window.AD_REVIEW?.setPlayback(adType,base);
+ const ad=state.type==='video'?'ad-video':'ad-image';
+ adNext=trial?done:()=>{go(base,false);done();};
+ go(ad,false);
+}
+function renderTrialAd(root){
+ const current=trialAd;
+ const panel=document.createElement('section');
+ panel.className='review-playing-ad trial-playing-ad';
+ panel.setAttribute('role','dialog');
+ panel.setAttribute('aria-modal','true');
+ panel.setAttribute('aria-label',current.label);
+ const title=document.createElement('strong');
+ title.textContent=current.label;
+ const status=document.createElement('small');
+ status.setAttribute('aria-live','polite');
+ const control=document.createElement('button');
+ control.type='button';
+ control.dataset.trialAdControl='';
+ function drawControls(){
+  status.textContent=current.ready&&adPresentation==='rewarded'?'观看完成':'本地广告模拟';
+  control.textContent=current.ready?'关闭广告':'取消观看';
+ }
+ control.onclick=()=>{
+  if(trialAd!==current)return;
+  if(current.ready){finishAd();return;}
+  stopTimer();
+  trialAd=null;
+  adNext=null;
+  current.cancel();
+ };
+ drawControls();
+ panel.append(title,status,control);
+ root.append(panel);
+ control.focus({preventScroll:true});
+ if(!current.ready)timer=setTimeout(()=>{
+  if(trialAd!==current)return;
+  current.ready=true;
+  if(current.autoAdvance)finishAd();
+  else drawControls();
+ },1800);
+}
 function pickQuality(q){const proceed=()=>pickQualityCore(q);if(window.VIP_ACCESS?.beforeResultAction(proceed))return;return proceed();}
 function pickQualityCore(q){window.TEMPLATE_METRICS?.beginSave();state.quality=q;window.INVITE_UI?.noteSaveUnlock(q==='standard'?'free':null);if(state.type==='image')state.imageSaveOrigin=state.screen;go(state.type==='video'?'confirm-video':'save-image');}
 function finishSave(){const proceed=()=>finishSaveCore();if(window.VIP_ACCESS?.beforeResultAction(proceed))return;return proceed();}
@@ -141,7 +185,8 @@ function render(){const k=state.screen,root=$('#screen');window.INVITE_UI?.clear
   for(const t of ['服务条款','隐私政策']){const l=find(k,t);if(l)region(root,k,t,20,l.y-17,335,60,()=>t==='服务条款'&&window.BILLING_POLICY?window.BILLING_POLICY.open('terms'):status(t+'：原入口已保留，等待提供目标内容'));}
  }
  if(['ad-image','ad-video'].includes(k)){for(const l of entries(k).filter(l=>l.type==='text'&&/插页广告/.test(l.text)))setText(root,l,l.text.replace(/插页广告/g,adPresentation==='rewarded'?'激励广告':'插页广告'));}
- if(['splash','ad-image','ad-video'].includes(k)){region(root,k,'演示广告完成',0,0,375,812,finishAd);timer=setTimeout(finishAd,k==='splash'?1600:1800);}
+ if(['ad-image','ad-video'].includes(k)&&trialAd)renderTrialAd(root);
+ else if(['splash','ad-image','ad-video'].includes(k)){region(root,k,'演示广告完成',0,0,375,812,finishAd);timer=setTimeout(finishAd,k==='splash'?1600:1800);}
  window.NEW_UI?.enhance(k,root);window.VIP_CATALOG?.enhance(k,root);window.BILLING_POLICY?.enhance(k,root);window.WALLPAPER_V2?.enhance(k,root);updateDirectory();fit();window.TEMPLATE_METRICS?.onListRender(k);window.TEMPLATE_METRICS?.decorate();
 }
 const LANGUAGE_OPTIONS = ['English', '简体中文'];
@@ -159,7 +204,7 @@ function openHomeAfterSplash(){
  openModal('language');
 }
 function search(){state.search=(searchInput?.value||state.search||'').trim();go(!state.search||/模板|人物|照片|king|头像|写真|视频|图片/i.test(state.search)?'search':'no-search');}
-function finishAd(){if(!['splash','ad-image','ad-video'].includes(state.screen))return;stopTimer();if(state.screen==='splash'){openHomeAfterSplash();return}const target=adNext;adNext=null;if(typeof target==='function')target();else go(target||'creating',false);}
+function finishAd(){if(!['splash','ad-image','ad-video'].includes(state.screen))return;stopTimer();if(state.screen==='splash'){openHomeAfterSplash();return}const target=adNext;adNext=null;trialAd=null;if(typeof target==='function')target();else go(target||'creating',false);}
 function closeModal(refresh=true){
  if(state.modal==='login'&&!state.logged)window.NEW_UI?.cancelLoginIntent();
  state.modal=null;$('#modal-host').innerHTML='';if(refresh){updateDirectory();fit();}profileInput=null;}
@@ -198,7 +243,7 @@ function openModalCore(k){if(k==='watermark'&&window.NEW_UI){window.NEW_UI.unloc
  if(k==='watermark'){bind(sheet,k,'暂不解锁',close,16);bind(sheet,k,'观看广告解锁',()=>{const base=state.screen;close();playAd(()=>{state.watermark=true;persist();go(base,false)},base)},16);}
  window.NEW_UI?.enhanceModal(k,sheet);window.VIP_ACCESS?.enhanceModal?.(k,sheet);updateDirectory();
 }
-function selectDemo(k){if(window.NEW_UI?.requestPreparedRetryExit(()=>selectDemo(k)))return;stopTimer();closeModal(false);if(['detail-video','save-video','confirm-video','work-video','ad-video','saved'].includes(k))state.type='video';if(['detail-image','complete','save-image','work-image','ad-image'].includes(k))state.type='image';if(k==='works')state.deleted=[];if(k==='profile')state.logged=false;if(k==='profile-in')state.logged=true;if(modalKeys.has(k)){const base=['login','invite-share','logout','edit-profile'].includes(k)?(k==='login'?'profile':'profile-in'):k==='categories'||k==='language'?'home':k==='delete'?'works':['exit-creating','stop-creating','failed'].includes(k)?'creating':k==='work-share'?'complete':'save-image';if(base==='profile-in')state.logged=true;go(base);openModal(k);}else{if(k==='ad-image'||k==='ad-video'){adPresentation='interstitial';window.AD_REVIEW?.setPlayback('interstitial',k);adNext='creating';}go(k);}document.body.classList.remove('directory-open');}
+function selectDemo(k){if(window.NEW_UI?.requestPreparedRetryExit(()=>selectDemo(k)))return;stopTimer();trialAd=null;closeModal(false);if(['detail-video','save-video','confirm-video','work-video','ad-video','saved'].includes(k))state.type='video';if(['detail-image','complete','save-image','work-image','ad-image'].includes(k))state.type='image';if(k==='works')state.deleted=[];if(k==='profile')state.logged=false;if(k==='profile-in')state.logged=true;if(modalKeys.has(k)){const base=['login','invite-share','logout','edit-profile'].includes(k)?(k==='login'?'profile':'profile-in'):k==='categories'||k==='language'?'home':k==='delete'?'works':['exit-creating','stop-creating','failed'].includes(k)?'creating':k==='work-share'?'complete':'save-image';if(base==='profile-in')state.logged=true;go(base);openModal(k);}else{if(k==='ad-image'||k==='ad-video'){adPresentation='interstitial';window.AD_REVIEW?.setPlayback('interstitial',k);adNext='creating';}go(k);}document.body.classList.remove('directory-open');}
 for(const [label,keys] of groups){const s=document.createElement('div');s.className='section';s.textContent=label;$('#screen-list').appendChild(s);for(const k of keys){const b=document.createElement('button');b.dataset.key=k;b.textContent=titles[k];b.onclick=()=>selectDemo(k);$('#screen-list').appendChild(b);}}
 function closeMobileDirectory(){
  if(!document.body.classList.contains('directory-open'))return;
@@ -217,12 +262,12 @@ window.addEventListener('keydown',event=>{
  }
 },true);
 $('#toggle-directory').onclick=()=>{if(innerWidth<=800)document.body.classList.toggle('directory-open');else document.body.classList.toggle('directory-hidden');requestAnimationFrame(fit)};
-$('#reset').onclick=()=>{stopTimer();closeModal(false);state={screen:'splash',modal:null,type:'image',quality:'hd',logged:false,name:'谷歌名称',search:'',uploaded:0,watermark:false,unlocks:{},deleted:[],language:null,languagePromptSeen:false};stack=[];try{localStorage.removeItem('firevidu-ui-demo')}catch{}render()};
+$('#reset').onclick=()=>{stopTimer();trialAd=null;adNext=null;closeModal(false);state={screen:'splash',modal:null,type:'image',quality:'hd',logged:false,name:'谷歌名称',search:'',uploaded:0,watermark:false,unlocks:{},deleted:[],language:null,languagePromptSeen:false};stack=[];try{localStorage.removeItem('firevidu-ui-demo')}catch{}render()};
 window.addEventListener('resize',fit);
 window.addEventListener('keydown',event=>{
  if(event.key!=='Escape'||event.defaultPrevented||document.body.dataset.workspace==='admin')return;
  if(state.modal){closeModal();return;}
- const control=$('#screen [data-escape-dismiss]')||$('#screen [data-action="返回"]');
+ const control=$('#screen [data-trial-ad-control]')||$('#screen [data-escape-dismiss]')||$('#screen [data-action="返回"]');
  if(control)control.click();
  else back();
 });

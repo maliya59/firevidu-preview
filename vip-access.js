@@ -118,13 +118,13 @@ function chooseTemplateTrial(active){
  if(isMember()){flow=null;removeTemplateSheet();if(active.request.kind==='create'){session.templateAttempt=null;saveSession();}active.request.proceed();return;}
  if(!logged()){requestLogin(active.request,'trial');return;}
  if(account(readStore()).count>=LIMIT){active.error='今日体验次数已用完，开通VIP后可继续使用。';drawCurrent();return;}
- active.phase='ads';if(!experienceAdEnabled('template')){active.completed=ADS;launch(active);}else watchAd(active);
+ active.phase='ads';watchAd(active);
 }
 function drawTemplateSheet(root){
  const active=flow;if(!active||active.request.domain!=='template'||!logged()||state().screen!==active.request.origin||state().modal||active.phase==='member')return;
  if(active.photos?.length&&!root.querySelector('.new-photo'))for(const photo of active.photos)root.append(photo.cloneNode(true));
  removeTemplateSheet();const full=logged()&&account(readStore()).count>=LIMIT,progress=active.phase==='ads';
- const mask=document.createElement('div');mask.className='vip-template-choice-mask';mask.innerHTML=`<section class="vip-template-choice-sheet" role="dialog" aria-modal="true" aria-label="选择VIP模板使用方式"><header><h2 ${H('使用VIP模板','未开通VIP时，可选择开通VIP或观看额外两次激励广告体验本次。')}>使用VIP模板</h2><button type="button" data-vip-choice="close" aria-label="关闭VIP使用方式">×</button></header><p class="vip-template-choice-name" ${H('模板名称','这里对应本次选择的模板，原型用（模板名称）占位。')}>（模板名称）</p><p>开通VIP直接使用，或观看2次广告体验本次。</p>${progress?`<div class="vip-ad-progress" ${H('体验广告进度','完整看完两次额外激励广告后才开始本次体验，不能用券抵扣。')}><div aria-hidden="true">${[0,1].map(i=>`<i class="${active.completed>i?'done':''}"></i>`).join('')}</div><span>已完成 ${active.completed} / 2 次广告</span></div>`:''}${full?'<p class="vip-template-quota">今日体验次数已用完，开通VIP后可继续使用。</p>':''}${active.error?`<p class="vip-error" role="alert">${E(active.error)}</p>`:''}<button type="button" class="vip-primary" data-vip-choice="member" ${active.watching||active.launching?'disabled':''} ${H('开通VIP','进入会员中心选择套餐；已选模板和照片保留，未付款不改变权益。')}>开通VIP</button><button type="button" class="vip-template-trial" data-vip-choice="trial" ${full||active.watching||active.launching?'disabled':''} ${H('看广告体验本次','主动选择后才播放两次额外激励广告。完整解锁并实际发起任务才计一次体验；关闭弹窗不扣次。')}>${full?'今日体验次数已用完':active.launching?'正在进入…':active.watching?'广告播放中…':active.completed>=ADS?'重试进入':progress&&active.completed?'继续观看激励广告':'看广告体验本次'}</button><button type="button" class="vip-template-cancel" data-vip-choice="close">暂不使用</button></section>`;
+ const mask=document.createElement('div');mask.className='vip-template-choice-mask';mask.innerHTML=`<section class="vip-template-choice-sheet" role="dialog" aria-modal="true" aria-label="选择VIP模板使用方式"><header><h2 ${H('使用VIP模板','未开通VIP时，可选择开通VIP或观看额外两次激励广告体验本次。')}>使用VIP模板</h2><button type="button" data-vip-choice="close" aria-label="关闭VIP使用方式">×</button></header><p class="vip-template-choice-name" ${H('模板名称','这里对应本次选择的模板，原型用（模板名称）占位。')}>（模板名称）</p><p>开通VIP直接使用，或连续观看2条激励广告体验本次。</p>${progress?`<div class="vip-ad-progress" ${H('体验广告进度','完整看完两次额外激励广告后才开始本次体验，不能用券抵扣。')}><div aria-hidden="true">${[0,1].map(i=>`<i class="${active.completed>i?'done':''}"></i>`).join('')}</div><span>已完成 ${active.completed} / 2 次广告</span></div>`:''}${full?'<p class="vip-template-quota">今日体验次数已用完，开通VIP后可继续使用。</p>':''}${active.error?`<p class="vip-error" role="alert">${E(active.error)}</p>`:''}<button type="button" class="vip-primary" data-vip-choice="member" ${active.watching||active.launching?'disabled':''} ${H('开通VIP','进入会员中心选择套餐；已选模板和照片保留，未付款不改变权益。')}>开通VIP</button><button type="button" class="vip-template-trial" data-vip-choice="trial" ${full||active.watching||active.launching?'disabled':''} ${H('看广告体验本次','主动选择后才播放两次额外激励广告。完整解锁并实际发起任务才计一次体验；关闭弹窗不扣次。')}>${full?'今日体验次数已用完':active.launching?'正在进入…':active.watching?'广告播放中…':active.completed>=ADS?'重试进入':progress&&active.completed?'继续观看激励广告':'看广告体验本次'}</button><button type="button" class="vip-template-cancel" data-vip-choice="close">暂不使用</button></section>`;
  mask.onclick=event=>{event.stopPropagation();const action=event.target.closest('[data-vip-choice]')?.dataset.vipChoice;if(event.target===mask||action==='close')cancelFlow(false);else if(action==='member')openMembership(active);else if(action==='trial')chooseTemplateTrial(active);};
  mask.onkeydown=event=>{if(event.key!=='Tab')return;const controls=[...mask.querySelectorAll('button:not(:disabled)')],first=controls[0],last=controls.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}};
  root.append(mask);mask.querySelector('[data-vip-choice="member"]')?.focus({preventScroll:true});
@@ -179,26 +179,26 @@ function rollbackLaunch(id,domain,resourceId,chargedDay){
 function commitLaunch(active){
  if(flow!==active||active.cancelled||!stillSelected(active.request))return;
  const request=active.request;
- if(!logged()){cancelFlow(false);requestLogin(request);return;}
+ if(!logged()){cancelFlow();requestLogin(request);return;}
  if(!currentMeta(request.domain).vip||isMember()){
   flow=null;removeTemplateSheet();if(request.kind==='create'){session.templateAttempt=null;saveSession();}
-  if(state().screen===SCREEN)navigate(request.origin,false);
+  if(state().screen!==request.origin)navigate(request.origin,false);
   request.proceed();return;
  }
  const store=readStore(),row=account(store);
- if(row.count>=LIMIT){flow=null;removeTemplateSheet();showQuota(request.origin);return;}
+ if(row.count>=LIMIT){flow=null;removeTemplateSheet();if(state().screen!==request.origin)navigate(request.origin,false);showQuota(request.origin);return;}
  const id='trial-'+uid(),grant={id,account:ACCOUNT,resourceId:request.meta.id,trial:true,mode:request.mode||request.meta.type,startedAt:Date.now(),day:row.day,failed:false};
  row.count++;
  if(request.domain==='template')row.templateGrants[id]=grant;else row.wallpaperGrants[request.meta.id]=grant;
  if(!writeStore(store)){
-  active.launching=false;active.error='暂时无法保存体验状态，请重试。';drawCurrent();return;
+  active.launching=false;active.error='暂时无法保存体验状态，请重试。';if(request.domain==='template'&&state().screen!==request.origin)navigate(request.origin,false);drawCurrent();return;
  }
  if(request.domain==='template'){session.templateAttempt=id;saveSession();}
  flow=null;removeTemplateSheet();
  try{
-  // 原保存及壁纸流程会从state.screen记录返回页，不能把体验页当成原页面。
-  if(state().screen===SCREEN)navigate(request.origin,false);
-  request.proceed();
+  // 先恢复原页面，后续制作和保存可沿用正常返回路径。
+  if(state().screen===SCREEN||request.domain==='template'&&state().screen!==request.origin)navigate(request.origin,false);
+  request.proceed(request.domain==='template'&&request.kind==='create'?{skipInterstitial:true}:undefined);
  }
  catch{
   rollbackLaunch(id,request.domain,request.meta.id,grant.day);
@@ -217,23 +217,46 @@ async function launch(active){
   else if(flow===active){active.launching=false;active.error='暂时无法开始体验，请重试。';drawCurrent();}
  }
 }
+function finishTemplateTrial(active){
+ const {request}=active;
+ const needsInterstitial=request.kind==='create'
+  && window.AD_CONFIG?.isEnabled('image-create-interstitial','regular')!==false;
+ if(!needsInterstitial||active.interstitialClosed){launch(active);return;}
+ active.watching=true;
+ playAd(()=>{
+  if(flow!==active||!stillSelected(request))return;
+  active.watching=false;
+  active.interstitialClosed=true;
+  launch(active);
+ },request.origin,'interstitial',{label:'插页广告'});
+}
 function watchAd(active){
  if(flow!==active||active.watching||active.launching)return;
  if(!currentMeta(active.request.domain).vip||isMember()){
-  flow=null;removeTemplateSheet();if(state().screen===SCREEN)navigate(active.request.origin,false);continueRequest(active.request);return;
+  flow=null;removeTemplateSheet();if(state().screen!==active.request.origin)navigate(active.request.origin,false);continueRequest(active.request);return;
  }
- if(!experienceAdEnabled(active.request.domain)){active.completed=ADS;launch(active);return;}
- if(active.completed>=ADS){launch(active);return;}
- if(!logged()){cancelFlow(false);requestLogin(active.request);return;}
- active.watching=true;active.error='';drawCurrent();
+ const isTemplate=active.request.domain==='template';
+ if(!logged()){cancelFlow();requestLogin(active.request);return;}
+ if(!experienceAdEnabled(active.request.domain))active.completed=ADS;
+ const complete=isTemplate?finishTemplateTrial:launch;
+ if(active.completed>=ADS){complete(active);return;}
+ active.watching=true;active.error='';
+ if(isTemplate)removeTemplateSheet();else drawCurrent();
  if(typeof playAd!=='function'){active.watching=false;active.error='广告暂时不可用，请稍后重试。';drawCurrent();return;}
+ const trial=isTemplate?{
+  label:'激励广告 '+(active.completed+1)+' / '+ADS,
+  autoAdvance:active.completed+1<ADS,
+  cancel:()=>cancelFlow()
+ }:null;
  let settled=false;
  try{playAd(()=>{
   if(settled)return;settled=true;
   if(flow!==active||active.cancelled||!stillSelected(active.request))return;
   active.watching=false;active.completed++;
-  if(active.completed>=ADS)launch(active);else drawCurrent();
- },active.request.domain==='template'?active.request.origin:SCREEN);}catch{active.watching=false;active.error='广告暂时不可用，请稍后重试。';drawCurrent();}
+  if(active.completed>=ADS)complete(active);
+  else if(isTemplate)watchAd(active);
+  else drawCurrent();
+ },isTemplate?active.request.origin:SCREEN,'rewarded',trial);}catch{active.watching=false;active.error='广告暂时不可用，请稍后重试。';if(isTemplate&&state().screen!==active.request.origin)navigate(active.request.origin,false);drawCurrent();}
 }
 function drawCurrent(){const root=document.querySelector('#screen');if(!root)return;if(flow?.request.domain==='template'){drawTemplateSheet(root);return;}if(state().screen===SCREEN)draw(root);}
 function draw(root){

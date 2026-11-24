@@ -11,3 +11,13 @@
 :is(.review-ad,.review-reward-action,.review-coupon-entry,.review-fullscreen,.review-playing-ad,.review-wallpaper-banner,.new-empty-search-banner),:is(.review-ad,.review-reward-action,.review-coupon-entry,.review-fullscreen,.review-playing-ad,.review-wallpaper-banner,.new-empty-search-banner) *{color:#352b00!important}
 
 .review-fullscreen.review-resume-ad{background:#eee;color:#333}.review-resume-ad button{background:#fff;border-color:#aaa}
+
+.trial-playing-ad{pointer-events:auto}
+.trial-playing-ad button{
+ padding:10px 20px;
+ border:1px solid #a98b21;
+ border-radius:6px;
+ background:#fff5c0;
+ font:14px sans-serif;
+ cursor:pointer;
+}
