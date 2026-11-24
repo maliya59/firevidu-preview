@@ -138,7 +138,7 @@ function beginFlow(request,skipAds=false){
  if(flow)cancelFlow(false);
  flow={id:uid(),request,completed:request.domain==='template'?0:skipAds?ADS:0,watching:false,launching:false,cancelled:false,error:'',phase:'choice',restoreFocus:document.activeElement,photos:request.domain==='template'?[...document.querySelectorAll('#screen .new-photo')].map(el=>el.cloneNode(true)):[]};
  if(request.domain==='template'){drawCurrent();return;}
- if(skipAds){launch(flow);return;}registerScreen();navigate(SCREEN,true);
+ if(skipAds){finishTrialAds(flow);return;}registerScreen();navigate(SCREEN,false);
 }
 function continueRequest(request){
  if(!stillSelected(request))return;
@@ -191,13 +191,16 @@ function commitLaunch(active){
  row.count++;
  if(request.domain==='template')row.templateGrants[id]=grant;else row.wallpaperGrants[request.meta.id]=grant;
  if(!writeStore(store)){
-  active.launching=false;active.error='暂时无法保存体验状态，请重试。';if(request.domain==='template'&&state().screen!==request.origin)navigate(request.origin,false);drawCurrent();return;
+  active.launching=false;active.error='暂时无法保存体验状态，请重试。';
+  const retryPage=request.domain==='template'?request.origin:SCREEN;
+  if(state().screen!==retryPage)navigate(retryPage,false);
+  drawCurrent();return;
  }
  if(request.domain==='template'){session.templateAttempt=id;saveSession();}
  flow=null;removeTemplateSheet();
  try{
   // 先恢复原页面，后续制作和保存可沿用正常返回路径。
-  if(state().screen===SCREEN||request.domain==='template'&&state().screen!==request.origin)navigate(request.origin,false);
+  if(state().screen!==request.origin)navigate(request.origin,false);
   request.proceed(request.domain==='template'&&request.kind==='create'?{skipInterstitial:true}:undefined);
  }
  catch{
@@ -217,11 +220,10 @@ async function launch(active){
   else if(flow===active){active.launching=false;active.error='暂时无法开始体验，请重试。';drawCurrent();}
  }
 }
-function finishTemplateTrial(active){
+function finishTrialAds(active){
  const {request}=active;
- const needsInterstitial=request.kind==='create'
-  && window.AD_CONFIG?.isEnabled('image-create-interstitial','regular')!==false;
- if(!needsInterstitial||active.interstitialClosed){launch(active);return;}
+ const placement=request.domain==='wallpaper'?'vip-wallpaper-interstitial':request.kind==='create'?'image-create-interstitial':null;
+ if(!placement||active.interstitialClosed||window.AD_CONFIG?.isEnabled(placement,'regular')===false){launch(active);return;}
  active.watching=true;
  playAd(()=>{
   if(flow!==active||!stillSelected(request))return;
@@ -238,32 +240,34 @@ function watchAd(active){
  const isTemplate=active.request.domain==='template';
  if(!logged()){cancelFlow();requestLogin(active.request);return;}
  if(!experienceAdEnabled(active.request.domain))active.completed=ADS;
- const complete=isTemplate?finishTemplateTrial:launch;
- if(active.completed>=ADS){complete(active);return;}
+ if(active.completed>=ADS){finishTrialAds(active);return;}
  active.watching=true;active.error='';
  if(isTemplate)removeTemplateSheet();else drawCurrent();
  if(typeof playAd!=='function'){active.watching=false;active.error='广告暂时不可用，请稍后重试。';drawCurrent();return;}
- const trial=isTemplate?{
+ const trial={
   label:'激励广告 '+(active.completed+1)+' / '+ADS,
   autoAdvance:active.completed+1<ADS,
   cancel:()=>cancelFlow()
- }:null;
+ };
  let settled=false;
  try{playAd(()=>{
   if(settled)return;settled=true;
   if(flow!==active||active.cancelled||!stillSelected(active.request))return;
   active.watching=false;active.completed++;
-  if(active.completed>=ADS)complete(active);
-  else if(isTemplate)watchAd(active);
-  else drawCurrent();
- },isTemplate?active.request.origin:SCREEN,'rewarded',trial);}catch{active.watching=false;active.error='广告暂时不可用，请稍后重试。';if(isTemplate&&state().screen!==active.request.origin)navigate(active.request.origin,false);drawCurrent();}
+  watchAd(active);
+ },active.request.origin,'rewarded',trial);}catch{
+  active.watching=false;active.error='广告暂时不可用，请稍后重试。';
+  const retryPage=isTemplate?active.request.origin:SCREEN;
+  if(state().screen!==retryPage)navigate(retryPage,false);
+  drawCurrent();
+ }
 }
 function drawCurrent(){const root=document.querySelector('#screen');if(!root)return;if(flow?.request.domain==='template'){drawTemplateSheet(root);return;}if(state().screen===SCREEN)draw(root);}
 function draw(root){
  const active=flow,meta=active?.request.meta;
  const title=meta?.title||(active?.request.domain==='wallpaper'?'VIP壁纸':'VIP模板');
  root.classList.add('vip-access');
- root.innerHTML=`<section class="vip-screen"><div class="vip-status-bar"><span>9:41</span><span aria-hidden="true">▂▄▆ ▰</span></div><header class="vip-header"><button type="button" data-vip-access="back" aria-label="返回" ${H('返回','退出本次尚未开始的体验，不扣除体验次数。')}>‹</button><h1 ${H('体验VIP功能','普通用户通过额外两次激励广告体验本次VIP内容，实际VIP可直接使用。')}>体验VIP功能</h1></header><main class="vip-body">${active?`<div class="vip-item-preview" ${H(title,'当前准备体验的VIP内容。体验资格只用于本次内容，不替代保存、去水印或设置壁纸的原有解锁规则。')}><span>VIP</span><strong>${E(title)}</strong></div><p class="vip-intro" ${H('体验方式','两次广告必须实际完成，不能使用通用券或去水印券代替。')}>观看2次激励广告，体验本次VIP功能。</p><div class="vip-ad-progress" ${H('体验广告进度','完整看完两次激励广告后才开始本次体验；不能使用免广告券抵扣。')}><div aria-hidden="true">${[0,1].map(index=>`<i class="${active.completed>index?'done':''}"></i>`).join('')}</div><span>已完成 ${active.completed} / 2 次广告</span></div>${active.error?`<p class="vip-error" role="alert">${E(active.error)}</p>`:''}<button type="button" class="vip-primary vip-start" data-vip-access="watch" ${active.watching||active.launching?'disabled':''} ${H('体验VIP功能','每次体验前实际完成两次激励广告。本次开始后，保存、去水印和壁纸设置仍按原有规则解锁。')}>${active.launching?'正在进入…':active.completed>=ADS?'重试':active.completed?'继续观看激励广告':'观看激励广告'}</button><button type="button" class="vip-cancel" data-vip-access="back" ${H('暂不体验','返回本次体验前的页面，不扣除尚未发起任务的体验次数。')}>暂不体验</button>`:'<p>本次体验已结束。</p><button type="button" class="vip-primary vip-start" data-vip-access="back">返回</button>'}</main><div class="vip-home-indicator" aria-hidden="true"></div></section>`;
+ root.innerHTML=`<section class="vip-screen"><div class="vip-status-bar"><span>9:41</span><span aria-hidden="true">▂▄▆ ▰</span></div><header class="vip-header"><button type="button" data-vip-access="back" aria-label="返回" ${H('返回','退出本次尚未开始的体验，不扣除体验次数。')}>‹</button><h1 ${H('体验VIP功能','普通用户通过额外两次激励广告体验本次VIP内容，实际VIP可直接使用。')}>体验VIP功能</h1></header><main class="vip-body">${active?`<div class="vip-item-preview" ${H(title,'当前准备体验的VIP内容。体验资格只用于本次内容，不替代保存、去水印或设置壁纸的原有解锁规则。')}><span>VIP</span><strong>${E(title)}</strong></div><p class="vip-intro" ${H('体验方式','两次广告必须实际完成，不能使用通用券或去水印券代替。')}>连续观看2条激励广告。关闭随后出现的插页后，继续设置壁纸。</p><div class="vip-ad-progress" ${H('体验广告进度','完整看完两次激励广告后才开始本次体验；不能使用免广告券抵扣。')}><div aria-hidden="true">${[0,1].map(index=>`<i class="${active.completed>index?'done':''}"></i>`).join('')}</div><span>已完成 ${active.completed} / 2 次广告</span></div>${active.error?`<p class="vip-error" role="alert">${E(active.error)}</p>`:''}<button type="button" class="vip-primary vip-start" data-vip-access="watch" ${active.watching||active.launching?'disabled':''} ${H('体验VIP功能','每次体验前实际完成两次激励广告。本次开始后，保存、去水印和壁纸设置仍按原有规则解锁。')}>${active.launching?'正在进入…':active.completed>=ADS?'重试':active.completed?'继续观看激励广告':'观看激励广告'}</button><button type="button" class="vip-cancel" data-vip-access="back" ${H('暂不体验','返回本次体验前的页面，不扣除尚未发起任务的体验次数。')}>暂不体验</button>`:'<p>本次体验已结束。</p><button type="button" class="vip-primary vip-start" data-vip-access="back">返回</button>'}</main><div class="vip-home-indicator" aria-hidden="true"></div></section>`;
  const phone=document.querySelector('#phone');if(phone)phone.dataset.height='812';
  root.onclick=event=>{const action=event.target.closest('[data-vip-access]')?.dataset.vipAccess;if(action==='back'){if(flow)cancelFlow();else navigate('home',false);}else if(action==='watch'&&flow)watchAd(flow);};
  root.oninput=null;root.onchange=null;
