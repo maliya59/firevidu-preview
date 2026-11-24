@@ -44,3 +44,11 @@
 .member-plan-card.is-selected{border-color:#333;background:#fff}.member-plan-eyebrow{font-size:11px;color:#777;margin-bottom:2px}.confirmed-body .member-plan-card h3{font-size:23px;margin:0}.member-plan-price{display:flex;align-items:baseline;gap:7px;margin-top:6px}.member-plan-price strong{font-size:36px;line-height:1.2}.member-plan-price span{font-size:13px;color:#777}.confirmed-body .member-plan-period{font-size:12px;color:#777;margin:4px 0 14px}.member-plan-gift{padding:12px 0;border-top:1px solid #ddd;border-bottom:1px solid #ddd}.member-plan-gift>strong{display:block;font-size:19px}.member-plan-gift small{display:block;font-size:11px;line-height:1.5;margin-top:4px}.member-plan-card ul{margin:12px 0;padding:0;list-style:none;font-size:12px;line-height:1.65}.member-plan-card li{margin:7px 0}.member-plan-card li:before{content:'✓';margin-right:7px}.member-plan-card li small{display:block;padding-left:18px;font-size:11px}.confirmed-body .member-plan-renew{font-size:10px;color:#777;margin:10px 0 0}.member-purchase-actions .confirmed-button{margin:5px 0}.member-purchase-actions [data-new-action=restore]{border:0;font-size:12px;color:#777;padding:7px}.confirmed-body .member-purchase-renew{text-align:center;font-size:11px;color:#777;margin:5px 0 0}.member-purchase-actions{margin-bottom:14px}
 
 .member-plan-gift{min-height:76px;box-sizing:border-box}.member-plan-gift>strong{font-size:16px;line-height:1.5}.member-plan-gift>strong b{font-size:23px;font-weight:700;white-space:nowrap}.member-plan-gift>small{color:#777}.member-plan-total{display:block;white-space:nowrap;font-size:16px;line-height:1.5}.member-plan-card ul{margin:10px 0}.member-plan-card li{margin:6px 0}
+
+.directory-backdrop{display:none}
+@media(max-width:800px){
+ body.directory-open:not([data-workspace=admin]) .directory-backdrop{
+  display:block;position:fixed;inset:0;z-index:99;width:100%;height:100%;
+  border:0;background:transparent;cursor:pointer
+ }
+}

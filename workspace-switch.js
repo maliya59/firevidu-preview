@@ -49,7 +49,7 @@
   if(resetting)return;resetting=true;
   const button=document.querySelector('#reset');button.disabled=true;
   // 重新执行同一份本地后台脚本以恢复其闭包中的示例状态，App 状态保持不变。
-  const loader=document.createElement('script');loader.src='admin.js?v=20261118-retry-photos';
+  const loader=document.createElement('script');loader.src=document.querySelector('script[src^="admin.js"]').src;
   loader.onload=()=>{
    try{observer?.disconnect();const old=adminWorkspace.querySelector('#admin-view'),fresh=document.createElement('div');fresh.id='admin-view';old.replaceWith(fresh);registerAndMount(fresh);}
    finally{resetting=false;button.disabled=false;loader.remove();}

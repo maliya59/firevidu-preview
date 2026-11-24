@@ -91,10 +91,10 @@ async function fillVisual(element,resource,{parallax=false,staticImage=false}={}
 function shell(root,title,{backTo='new-wallpaper'}={}){
  root.classList.remove('wireframe');root.classList.add('wp-v2-screen');root.innerHTML=`<div class="wp-v2-status"><span>9:41</span><span aria-hidden="true">▂▄▆ ▰</span></div><header class="wp-v2-header"><button type="button" aria-label="返回" ${H('返回','返回上一个壁纸页面，不改变已成功设置的历史记录。')}>‹</button><strong>${E(title)}</strong></header><section class="wp-v2-body"></section><div class="wp-v2-homebar" aria-hidden="true"></div>`;
  document.querySelector('#phone').dataset.height=812;
- root.querySelector('.wp-v2-header button').onclick=()=>{generationToken++;generating=false;if(backTo==='new-wallpaper-search'&&typeof back==='function')back();else navigate(backTo,false);};return root.querySelector('.wp-v2-body');
+ root.querySelector('.wp-v2-header button').onclick=()=>{generationToken++;generating=false;returnToScreen(backTo);};return root.querySelector('.wp-v2-body');
 }
 function dialog(root,title,message){
- root.querySelector('.wp-v2-dialog-mask')?.remove();const mask=document.createElement('div');mask.className='wp-v2-dialog-mask';mask.innerHTML=`<section role="dialog" aria-modal="true" aria-label="${E(title)}"><strong>${E(title)}</strong><p>${E(message)}</p><button type="button">知道了</button></section>`;mask.querySelector('button').onclick=()=>mask.remove();mask.onclick=event=>{if(event.target===mask)mask.remove();};root.appendChild(mask);
+ root.querySelector('.wp-v2-dialog-mask')?.remove();const mask=document.createElement('div');mask.className='wp-v2-dialog-mask';mask.innerHTML=`<section role="dialog" aria-modal="true" aria-label="${E(title)}"><strong>${E(title)}</strong><p>${E(message)}</p><button type="button" data-escape-dismiss>知道了</button></section>`;mask.querySelector('button').onclick=()=>mask.remove();mask.onclick=event=>{if(event.target===mask)mask.remove();};root.appendChild(mask);
 }
 function renderCustom(root){
  const draft=store.draft&&store.photos[store.draft],body=shell(root,'照片生成3D壁纸');
