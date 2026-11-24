@@ -25,7 +25,7 @@ function go(k,record=true){if(window.AD_REVIEW?.beforeGo(k,record))return;const 
 function back(){if(state.modal){closeModal();return}if(window.NEW_UI?.exitPreparedRetry())return;const k=stack.pop()||'home';go(k,false);}
 function profile(){go(state.logged?'profile-in':'profile');}
 function nav(root,k){const es=entries(k);for(const label of ['首页','作品','我的']){const l=es.find(x=>x.type==='text'&&x.text===label&&x.y>650);if(l)region(root,k,'底部导航 · '+label,Math.max(0,l.x-25),l.y-35,100,74,()=>label==='首页'?go('home'):label==='作品'?go(state.deleted.length>=3?'empty':'works'):profile());}}
-function attachBack(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&x.nativeName==='返回'))region(root,k,'返回',l.x-5,l.y-5,l.w+10,l.h+10,()=>{if(k==='creating')openModal('exit-creating');else if(k==='confirm-video')go('save-video',false);else if(k==='save-video')openModal('exit-save');else if(k==='save-image')openModal('exit-save');else back();});}
+function attachBack(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&(x.nativeName==='返回'||(k==='about'&&x.nativeName==='返回备份'))))region(root,k,'返回',l.x-5,l.y-5,l.w+10,l.h+10,()=>{if(k==='creating')openModal('exit-creating');else if(k==='confirm-video')go('save-video',false);else if(k==='save-video')openModal('exit-save');else if(k==='save-image')openModal('exit-save');else back();});}
 function ads(root,k){for(const l of entries(k).filter(x=>x.type==='group'&&/关闭|删除/.test(x.nativeName)&&x.w<=24&&x.y>600))region(root,k,'关闭横幅广告',l.x-4,l.y-4,l.w+8,l.h+8,()=>hideBanner(root,k));}
 function hideBanner(root,k){
  const layers=entries(k),labels=layers.filter(x=>x.type==='text'&&/横幅广告\s*Banner/i.test(x.text));
