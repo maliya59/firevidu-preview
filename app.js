@@ -153,6 +153,7 @@ function upload(root,k,number=1){
  startCreating();
 }
 function updateDirectory(){
+ if(!state.modal&&state.logged&&['home','profile-in','new-invite'].includes(state.screen))queueMicrotask(()=>window.INVITE_UI?.notifyRewards());
  const languageNote=$('#language-selection-note');
  if(languageNote)languageNote.hidden=state.modal!=='language';
  document.querySelectorAll('nav button').forEach(el=>el.classList.toggle('active',el.dataset.key===(state.modal||state.screen)));$('#scene-title').textContent=['ad-image','ad-video'].includes(state.screen)?(adPresentation==='rewarded'?'激励广告':'插页广告'):titles[state.modal||state.screen];}

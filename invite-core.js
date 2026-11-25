@@ -5,8 +5,20 @@ const commit=next=>{write(clone(next));store=next;};
 function pending(code){const next=clone(store);next.pending=String(code||'').trim().toUpperCase();commit(next);}
 function bind({code,logged,userId=currentId,source='手动输入',eligible=true}){code=String(code||'').trim().toUpperCase();if(!logged)return {ok:false,error:'请先登录，邀请码会为你保留。'};const existing=store.bindings.find(b=>b.userId===userId);if(existing)return existing.code===code?{ok:true,duplicate:true,binding:clone(existing)}:{ok:false,error:'你已绑定邀请人，不能更换邀请码。'};if(!/^FV\d{6}$/.test(code))return {ok:false,error:'请输入正确的邀请码，例如FV100102。'};const inviter=users.find(u=>u.code===code);if(!inviter)return {ok:false,error:'没有找到这个邀请码，请向好友确认。'};if(inviter.id===userId)return {ok:false,error:'不能填写自己的邀请码。'};if(!eligible)return {ok:false,error:'本活动绑定奖励仅面向新用户，你仍可以邀请好友。'};let ancestor=inviter.id;const visited=new Set();while(ancestor&&!visited.has(ancestor)){if(ancestor===userId)return {ok:false,error:'不能建立相互或循环邀请关系。'};visited.add(ancestor);ancestor=store.bindings.find(b=>b.userId===ancestor)?.inviterId;}
 const at=now(),quota=store.bindings.filter(b=>b.inviterId===inviter.id&&day(b.boundAt)===day(at)&&b.eligible).length<5,binding={userId,inviterId:inviter.id,code,boundAt:at,source,registrationRewardAt:quota?at:null,firstSaveAt:null,rewardAt:null,eligible:quota,example:false};const next=clone(store);next.bindings.push(binding);next.rewards=next.rewards||[];if(quota)next.rewards.push({id:'invite:'+userId+':registration:'+inviter.id,userId:inviter.id,type:'watermark',count:1,at,expiry:at+15*DAY});next.pending=null;try{commit(next);}catch{return {ok:false,error:'暂时无法绑定，请保留邀请码后重试。'};}return {ok:true,binding:clone(binding)};}
-function completeSave({logged,userId=currentId,quality,method}){if(!logged||quality!=='hd'||method!=='ad')return null;const next=clone(store),b=next.bindings.find(x=>x.userId===userId);if(!b?.eligible||b.firstSaveAt)return null;b.firstSaveAt=now();next.rewards=next.rewards||[];for(const recipient of [b.userId,b.inviterId])next.rewards.push({id:'invite:'+b.userId+':save:'+recipient,userId:recipient,type:'general',count:1,at:now(),expiry:now()+15*DAY});commit(next);return clone(b);}
+function completeSave({logged,userId=currentId,quality,method}){if(!logged||quality!=='hd'||method!=='ad')return null;const next=clone(store),b=next.bindings.find(x=>x.userId===userId);if(!b?.eligible||b.firstSaveAt)return null;const at=now();b.firstSaveAt=at;b.rewardAt=at;next.rewards=next.rewards||[];for(const recipient of [b.userId,b.inviterId])next.rewards.push({id:'invite:'+b.userId+':save:'+recipient,userId:recipient,type:'general',count:1,at,expiry:at+15*DAY});commit(next);return clone(b);}
 function receipt(userId,stage){const next=clone(store),b=next.bindings.find(x=>x.userId===userId);if(!b?.eligible)return false;const field=stage==='registration'?'registrationRewardAt':'rewardAt';if(b[field]||stage!=='registration'&&!b.firstSaveAt)return false;b[field]=now();commit(next);return true;}
-return {bind,pending,completeSave,receipt,get state(){return clone(store);},get users(){return clone(users);},code:id=>'FV'+id};}
+function invitationRecords(userId=currentId){
+ const records={recent:[],history:[]};
+ const cutoff=now()-7*DAY;
+ for(const binding of store.bindings.filter(item=>item.inviterId===userId)){
+  const completedAt=binding.firstSaveAt&&binding.rewardAt&&binding.registrationRewardAt
+   ?Math.max(binding.firstSaveAt,binding.rewardAt,binding.registrationRewardAt):null;
+  records[completedAt&&completedAt<=cutoff?'history':'recent'].push({...binding,completedAt});
+ }
+ records.recent.sort((a,b)=>b.boundAt-a.boundAt);
+ records.history.sort((a,b)=>b.completedAt-a.completedAt);
+ return clone(records);
+}
+return {bind,pending,completeSave,receipt,invitationRecords,get state(){return clone(store);},get users(){return clone(users);},code:id=>'FV'+id};}
 const api={create};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.INVITE_CORE=api;
 })(typeof window==='undefined'?globalThis:window);

@@ -28,3 +28,12 @@
 
 /* Destructive local-demo actions require a concrete confirmation. */
 .admin-confirm-mask{position:fixed;inset:0;z-index:1900;background:#0007;display:flex;align-items:center;justify-content:center;padding:24px}.admin-confirm-dialog{width:440px;max-width:95vw;background:#fff;border-radius:8px;padding:24px;color:#333;box-shadow:0 15px 50px #0004}.admin-confirm-dialog h3{margin:0 0 16px;font-size:19px}.admin-confirm-dialog p{font-size:14px;line-height:1.7;overflow-wrap:anywhere}.admin-confirm-dialog footer{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
+
+.admin-inline-form .admin-language-package{min-width:0;display:grid;gap:7px}
+.admin-language-package input[type=file]{height:auto;padding:7px;width:100%;background:#fff}
+.admin-language-package small{color:#727784;overflow-wrap:anywhere}
+.admin-language-options{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.admin-language-options button[aria-pressed=true]{border-color:#1683ff;background:#eaf4ff;color:#1266bf}
+.admin-status-translations th:last-child{width:48%}
+.admin-status-translations input{width:100%;padding:9px 10px;border:1px solid #d9dde6;border-radius:4px;font:inherit}
+.admin-language-actions{margin-top:16px;display:flex;justify-content:flex-end}
