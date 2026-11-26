@@ -86,11 +86,11 @@
 }
 
 
-#stage:has(#coupon-rule-note:not([hidden])){
+#stage:has(:is(#coupon-rule-note,#invite-rule-note):not([hidden])){
   gap:42px;
   padding-inline:12px;
 }
-#coupon-rule-note{
+:is(#coupon-rule-note,#invite-rule-note){
   position:relative;
   z-index:4;
   flex:0 0 300px;
@@ -103,20 +103,20 @@
   font-size:13px;
   line-height:1.65;
 }
-#coupon-rule-note h2{
+:is(#coupon-rule-note,#invite-rule-note) h2{
   margin:0;
   font-size:14px;
   font-weight:600;
   color:#453f4d;
 }
-#coupon-rule-note dl{margin:10px 0 0}
-#coupon-rule-note dl>div+div{
+:is(#coupon-rule-note,#invite-rule-note) dl{margin:10px 0 0}
+:is(#coupon-rule-note,#invite-rule-note) dl>div+div{
   margin-top:8px;
   padding-top:8px;
   border-top:1px solid #e5e0eb;
 }
-#coupon-rule-note dt{position:relative;font-weight:600}
-#coupon-rule-note dd{margin:2px 0 0}
+:is(#coupon-rule-note,#invite-rule-note) dt{position:relative;font-weight:600}
+:is(#coupon-rule-note,#invite-rule-note) dd{margin:2px 0 0}
 .coupon-rule-pointer{
   position:absolute;
   top:50%;
@@ -136,13 +136,13 @@
 }
 #stage:has(#phone :is(.modal-sheet,.review-fullscreen)) .coupon-rule-pointer{visibility:hidden}
 @media(max-width:1000px), (max-height:510px){
-  #stage:has(#coupon-rule-note:not([hidden])){
+  #stage:has(:is(#coupon-rule-note,#invite-rule-note):not([hidden])){
     flex-direction:column;
     justify-content:flex-start;
     gap:12px;
     padding-block:6px 16px;
     overflow-y:auto;
   }
-  #coupon-rule-note{flex:none;width:min(375px,100%)}
+  :is(#coupon-rule-note,#invite-rule-note){flex:none;width:min(375px,100%)}
   .coupon-rule-pointer{display:none}
 }
