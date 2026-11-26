@@ -140,17 +140,13 @@ let languageRows=[{name:'英语',display:'English',code:'en',enabled:false,defau
 const categoryTranslations={en:['Portraits','Creative Styles','Photo','Wedding','Photo Frame'],zh:['个人形象','创意风格','写真','婚礼','相框'],hi:['','','','','']};
 const LANGUAGE_STORAGE='firevidu-language-config-v1';
 const statusMessages=[
- ['network_unavailable','网络不佳，请重试'],
- ['request_timeout','请求超时，请重试'],
- ['service_busy','服务繁忙，请稍后重试']
+ {key:'network_unavailable',zh:'网络不佳，请重试',en:'Network connection is unstable. Please try again.',hi:'नेटवर्क कनेक्शन ठीक नहीं है। कृपया फिर से कोशिश करें।'},
+ {key:'request_timeout',zh:'请求超时，请重试',en:'Request timed out. Please try again.',hi:'अनुरोध का समय समाप्त हो गया। कृपया फिर से कोशिश करें।'},
+ {key:'service_busy',zh:'服务繁忙，请稍后重试',en:'The service is busy. Please try again later.',hi:'सेवा व्यस्त है। कृपया थोड़ी देर बाद फिर से कोशिश करें।'}
 ];
 let statusLanguage='';
 const statusDrafts=new Map();
-let statusTranslations={en:{
- network_unavailable:'Network connection is unstable. Please try again.',
- request_timeout:'Request timed out. Please try again.',
- service_busy:'The service is busy. Please try again later.'
-}};
+let statusTranslations={en:Object.fromEntries(statusMessages.map(({key,en})=>[key,en]))};
 try{
  const saved=JSON.parse(localStorage.getItem(LANGUAGE_STORAGE)||'null');
  if(Array.isArray(saved?.languages)&&saved.categories&&saved.status){
@@ -168,6 +164,16 @@ function storeLanguages(languages=languageRows,categories=categoryTranslations,s
   return false;
  }
 }
+function statusPackTranslations(pack){
+ if(!pack?.name?.toLowerCase().endsWith('.json'))return null;
+ try{
+  const comma=pack.data.indexOf(',');
+  const bytes=Uint8Array.from(atob(pack.data.slice(comma+1)),char=>char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+ }catch{
+  return null;
+ }
+}
 function renderStatusTranslations(body){
  const language=languageRows.find(row=>row.code===statusLanguage);
  const saved=statusDrafts.get(statusLanguage)||(Object.hasOwn(statusTranslations,statusLanguage)?statusTranslations[statusLanguage]:{});
@@ -175,7 +181,7 @@ function renderStatusTranslations(body){
   +'<div class="admin-language-options" role="group" aria-label="选择状态文案语言">'
   +languageRows.map(row=>'<button type="button" class="admin-btn" data-status-language="'+esc(row.code)+'" aria-pressed="'+(row===language)+'">'+esc(row.name)+'</button>').join('')+'</div>'
   +(language?'<form><table class="admin-table admin-status-translations"><thead><tr><th>状态</th><th>中文原文</th><th>'+esc(language.name)+'译文</th></tr></thead><tbody>'
-  +statusMessages.map(([key,copy])=>'<tr><td><code>'+key+'</code></td><td>'+copy+'</td><td><input name="'+key+'" aria-label="'+esc(language.name+' '+copy)+'" placeholder="填写译文" value="'+esc(saved[key]??(statusLanguage==='zh'?copy:''))+'"></td></tr>').join('')
+  +statusMessages.map(({key,zh})=>'<tr><td><code>'+key+'</code></td><td>'+zh+'</td><td><div class="admin-status-translation-field"><input name="'+key+'" aria-label="'+esc(language.name+' '+zh)+'" placeholder="填写译文" value="'+esc(saved[key]??(statusLanguage==='zh'?zh:''))+'"><button type="button" class="admin-btn" data-status-translate="'+key+'" aria-label="'+esc('翻译 '+zh)+'">翻译</button></div></td></tr>').join('')
   +'</tbody></table><div class="admin-language-actions"><button type="submit" class="admin-btn blue">保存状态文案</button></div></form>':'<p class="admin-muted">请选择语言后填写译文。</p>');
  body.querySelector('.admin-language-options').onclick=event=>{
   const button=event.target.closest('[data-status-language]');
@@ -187,6 +193,26 @@ function renderStatusTranslations(body){
  const form=body.querySelector('form');
  if(!form)return;
  form.oninput=()=>statusDrafts.set(statusLanguage,Object.fromEntries(new FormData(form)));
+ form.onclick=event=>{
+  const button=event.target.closest('[data-status-translate]');
+  if(!button)return;
+  const key=button.dataset.statusTranslate;
+  const message=statusMessages.find(item=>item.key===key);
+  const code=language.code.toLowerCase();
+  const base=code.split('-')[0];
+  const builtInLocale=['en','hi'].includes(base)||code==='zh'||/^zh-(?:hans|cn|sg)(?:-|$)/.test(code);
+  const packText=statusPackTranslations(language.pack)?.[key];
+  const builtIn=builtInLocale?message[base]:null;
+  const translation=typeof packText==='string'&&packText.trim()?packText.trim():builtIn;
+  if(!translation){
+   toast('当前语言缺少此项译文，请手动填写或上传包含该状态键的 JSON 语言包');
+   return;
+  }
+  const input=form.elements.namedItem(key);
+  input.value=translation;
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  input.focus();
+ };
  form.onsubmit=event=>{
   event.preventDefault();
   const translations=Object.fromEntries([...new FormData(form)].map(([key,value])=>[key,value.trim()]));

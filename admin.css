@@ -35,5 +35,7 @@
 .admin-language-options{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
 .admin-language-options button[aria-pressed=true]{border-color:#1683ff;background:#eaf4ff;color:#1266bf}
 .admin-status-translations th:last-child{width:48%}
-.admin-status-translations input{width:100%;padding:9px 10px;border:1px solid #d9dde6;border-radius:4px;font:inherit}
+.admin-status-translation-field{display:flex;align-items:center;gap:8px}
+.admin-status-translation-field .admin-btn{flex:none;white-space:nowrap}
+.admin-status-translations input{flex:1;min-width:0;padding:9px 10px;border:1px solid #d9dde6;border-radius:4px;font:inherit}
 .admin-language-actions{margin-top:16px;display:flex;justify-content:flex-end}
