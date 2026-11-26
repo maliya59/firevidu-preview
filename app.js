@@ -61,12 +61,12 @@ function start(type,metadata){if(window.NEW_UI?.requestPreparedRetryExit(()=>sta
 function adAllowed(name){const audience=window.NEW_UI?.member.active&&state.logged?'member':'regular';return window.AD_CONFIG?window.AD_CONFIG.isEnabled(name,audience):window.ADMIN_UI?.adEnabled(name,audience)!==false;}
 function startCreating(){if(!['detail-image','detail-video'].includes(state.screen))return;if(!window.NEW_UI?.hasPreparedRetry()&&(!state.uploaded||(state.screen==='detail-image'&&!imagePhotoSlots().includes(1)))){toast(state.type==='video'?'请先上传照片，再开始预览':'请先上传照片，再开始制作');return;}if(window.NEW_UI?.beginPreparedRetry(()=>startCreatingCore(true)))return;const proceed=({skipInterstitial=false}={})=>startCreatingCore(skipInterstitial);if(window.VIP_ACCESS?.beforeCreate(proceed))return;return proceed();}
 function startCreatingCore(skipInterstitial=false){if(!state.uploaded){toast(state.type==='video'?'请先上传照片，再开始预览':'请先上传照片，再开始制作');return;}window.TEMPLATE_METRICS?.create();if(state.type==='video'){state.videoSaving=false;go('save-video');return;}if(skipInterstitial||!adAllowed('制作同款开始制作插页广告')){go('creating');return;}adPresentation='interstitial';window.AD_REVIEW?.setPlayback('interstitial','detail-image');adNext='creating';go('ad-image');}
-function playAd(done,base=state.screen,adType='rewarded',trial=null){
+function playAd(done,base=state.screen,adType='rewarded',trial=null,returnToBase=true){
  adPresentation=adType;
  trialAd=trial&&{...trial,ready:adType==='interstitial'};
  window.AD_REVIEW?.setPlayback(adType,base);
  const ad=state.type==='video'?'ad-video':'ad-image';
- adNext=trial?done:()=>{go(base,false);done();};
+ adNext=trial||!returnToBase?done:()=>{go(base,false);done();};
  go(ad,false);
 }
 function renderTrialAd(root){

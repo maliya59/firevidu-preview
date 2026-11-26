@@ -115,7 +115,9 @@ function modeOffer(resource,mode){
  const title=mode==='static'?'设为静态壁纸':mode==='motion'?'保留3D效果':'保留视频动态效果';
  if(pending)return {title,note:'继续本次设置',help:'本次设置资格已经取得，继续设置不重复观看广告或扣券。'};
  if(reused)return {title,note:'',help:mode==='static'?'这张壁纸已有成功设置记录，从记录再设静态不看任何广告。':'这个动态效果已设置成功过，从记录再设不看激励广告；普通用户展示一次插页，VIP不展示。'};
- return {title,note:mode==='static'?'观看1次视频解锁':'观看2次视频解锁',help:mode==='static'?'首次设为静态壁纸需要1次正常激励视频，可主动选择1张通用券抵扣。':'首次设置当前动态效果需要2次正常激励视频，可主动选择通用券逐次抵扣；VIP内容额外体验规则单独判断。'};
+ const needed=mode==='static'?1:2;
+ const hasCoupons=window.NEW_UI?.wallet.general>0;
+ return {title,note:hasCoupons?'可用通用券抵扣':'观看'+needed+'次视频解锁',help:mode==='static'?'首次设为静态壁纸需要1次正常激励视频，可主动选择1张通用券抵扣。':'首次设置当前动态效果需要2次正常激励视频，可主动选择通用券逐次抵扣；VIP内容额外体验规则单独判断。'};
 }
 function chooseMode(root,resource=resourceCurrent()){
  closeModeChoice(false);

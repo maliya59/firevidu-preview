@@ -58,7 +58,7 @@ function saveFailed(){returnCoupons(lastSaveSpend);lastSaveSpend=[];delete state
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 for(const [key,info] of Object.entries(W))titles[key]=(key==='new-retry'?'反馈成功 · 免广告重试提示':info.title)+' · 新增原型';
 const addGroups=[['新增 · 邀请与券',['new-invite','new-invite-share-new','new-invite-records','new-coupons']],['新增 · 会员',['new-member','new-member-active','new-member-sync']],['新增 · 保存解锁',['new-unlock-save','new-unlock-watermark','new-unlock-progress','new-save-recovery']],['新增 · 壁纸',['new-wallpaper','new-wallpaper-static','new-wallpaper-motion','new-wallpaper-video','new-wallpaper-custom','new-wallpaper-unlock','new-wallpaper-system','new-wallpaper-unsupported',...Object.keys(W).filter(key=>key.startsWith('new-wallpaper-error-'))]],['新增 · 反馈与重试',['new-feedback','new-retry']]];
-for(const [label,keys] of addGroups){const h=document.createElement('div');h.className='section';h.textContent=label;$('#screen-list').appendChild(h);for(const key of keys){const b=document.createElement('button');b.dataset.key=key;b.textContent=key==='new-retry'?'反馈成功 · 重试提示':key==='new-invite-records'?'邀请记录':W[key].title;const selectNewDemo=()=>{if(requestPreparedRetryExit(selectNewDemo))return;stopTimer();const wallpaperDemo={'new-wallpaper-static':['official-0','static','静态壁纸'],'new-wallpaper-motion':['official-1','motion','3D壁纸'],'new-wallpaper-video':['official-2','video','视频壁纸']}[key];if(wallpaperDemo){const [id,type,title]=wallpaperDemo;context.wallpaperAsset=id;context.wallpaperMode=type;window.WALLPAPER_V2?.selectResource({id,type,title,vip:false});}if(['new-feedback','new-retry'].includes(key)){state.type='image';context.feedbackOrigin='complete';context.retryOrigin='complete';}if(key==='new-feedback'){gotoFeedback('complete');document.body.classList.remove('directory-open');return;}if(key==='new-unlock-save'){state.quality='uhd';context.kind='save';context.needed=2;context.used=0;context.progress=0;}if(key==='new-unlock-progress'){state.quality='uhd';context.kind='save';context.needed=2;context.used=0;context.progress=1;}if(key==='new-wallpaper-unlock'){prepareWallpaperCore(context.wallpaperMode);document.body.classList.remove('directory-open');return;}go(key);document.body.classList.remove('directory-open');};b.onclick=selectNewDemo;$('#screen-list').appendChild(b);}}
+for(const [label,keys] of addGroups){const h=document.createElement('div');h.className='section';h.textContent=label;$('#screen-list').appendChild(h);for(const key of keys){const b=document.createElement('button');b.dataset.key=key;b.textContent=key==='new-retry'?'反馈成功 · 重试提示':key==='new-invite-records'?'邀请记录':W[key].title;const selectNewDemo=()=>{if(requestPreparedRetryExit(selectNewDemo))return;stopTimer();const wallpaperDemo={'new-wallpaper-static':['official-0','static','静态壁纸'],'new-wallpaper-motion':['official-1','motion','3D壁纸'],'new-wallpaper-video':['official-2','video','视频壁纸']}[key];if(wallpaperDemo){const [id,type,title]=wallpaperDemo;context.wallpaperAsset=id;context.wallpaperMode=type;window.WALLPAPER_V2?.selectResource({id,type,title,vip:false});}if(['new-feedback','new-retry'].includes(key)){state.type='image';context.feedbackOrigin='complete';context.retryOrigin='complete';}if(key==='new-feedback'){gotoFeedback('complete');document.body.classList.remove('directory-open');return;}if(key==='new-unlock-save'){state.quality='uhd';unlockSave();document.body.classList.remove('directory-open');return;}if(key==='new-unlock-watermark'){unlockWatermark();document.body.classList.remove('directory-open');return;}if(key==='new-unlock-progress'){state.quality='uhd';context.kind='save';context.needed=2;context.used=0;context.progress=1;context.skipCouponPicker=false;}if(key==='new-wallpaper-unlock'){prepareWallpaperCore(context.wallpaperMode);document.body.classList.remove('directory-open');return;}go(key);document.body.classList.remove('directory-open');};b.onclick=selectNewDemo;$('#screen-list').appendChild(b);}}
 function texts(root,text){return [...root.querySelectorAll('.wf-text')].filter(e=>e.dataset.sourceText===text);}
 function change(root,text,value){for(const el of texts(root,text))el.textContent=value;}
 function box(root,k,label,fn){const info=W[k];const t=info.commands.find(c=>c.kind==='text'&&c.text===label);if(!t)return;const cx=t.x+t.w/2,cy=t.y+t.h/2;const b=info.commands.filter(c=>c.kind==='rect'&&c.w<375&&c.h>=25&&c.h<=90&&cx>=c.x&&cx<=c.x+c.w&&cy>=c.y&&cy<=c.y+c.h).sort((a,b)=>a.w*a.h-b.w*b.h)[0]||{x:t.x-4,y:t.y-4,w:t.w+8,h:t.h+8};return region(root,k,label,b.x,b.y,b.w,b.h,fn);}
@@ -72,15 +72,55 @@ function gotoFeedback(origin){if(state.type==='video'||!['complete','saved','fai
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&pendingFeedbackLogin&&state.modal==='login'&&!document.querySelector('.field-help-popup')&&document.body.dataset.workspace!=='admin'){event.preventDefault();event.stopImmediatePropagation();cancelFeedbackLogin();}},true);
 function normalAdName(){return context.kind==='wallpaper'?(context.wallpaperMode==='static'?'壁纸静态首次设置激励广告':context.wallpaperMode==='video'?'视频壁纸动态首次设置激励广告':'3D壁纸动态首次设置激励广告'):context.kind==='watermark'?'去水印的激励广告':state.quality==='uhd'?'超清保存的激励广告':'高清保存的激励广告';}
 function configured(name){return typeof adAllowed!=='function'||adAllowed(name);}
-function unlockSave(){if(!configured(state.quality==='uhd'?'超清保存的激励广告':'高清保存的激励广告')){state.unlocks[state.quality+'-'+state.type]=true;finishSave();return;}context.origin=state.screen;context.kind='save';context.needed=state.quality==='uhd'?2:1;context.used=0;context.progress=0;context.choice='ad';go('new-unlock-save');}
-function unlockWatermark(){if(!configured('去水印的激励广告')){state.watermark=true;persist();render();toast('已去水印');return;}if(state.watermark){toast('当前作品已去水印');return;}context.origin=state.screen;context.kind='watermark';context.needed=1;context.used=0;context.progress=0;context.choice='ad';go('new-unlock-watermark');}
+function showCouponPicker(screen){
+ refreshWallet();
+ if(context.kind==='watermark'){
+  const now=Date.now();
+  const usable=couponBatches.filter(batch=>batch.count>0&&batch.expiry>now&&wallet[batch.type]>0);
+  usable.sort((a,b)=>a.expiry-b.expiry||Number(b.type==='watermark')-Number(a.type==='watermark'));
+  context.choice=usable[0]?.type||'ad';
+  context.used=Number(context.choice!=='ad');
+ }else{
+  context.choice='ad';
+  context.used=Math.min(context.needed,wallet.general);
+ }
+ context.skipCouponPicker=context.used===0;
+ if(context.skipCouponPicker)return beginUnlock();
+ go(screen);
+}
+function unlockSave(){
+ if(!configured(state.quality==='uhd'?'超清保存的激励广告':'高清保存的激励广告')){
+  state.unlocks[state.quality+'-'+state.type]=true;
+  finishSave();
+  return;
+ }
+ context.origin=state.screen;
+ context.kind='save';
+ context.needed=state.quality==='uhd'?2:1;
+ context.progress=0;
+ showCouponPicker('new-unlock-save');
+}
+function unlockWatermark(){
+ if(!configured('去水印的激励广告')){state.watermark=true;persist();render();toast('已去水印');return;}
+ if(state.watermark){toast('当前作品已去水印');return;}
+ context.origin=state.screen;
+ context.kind='watermark';
+ context.needed=1;
+ context.progress=0;
+ showCouponPicker('new-unlock-watermark');
+}
 function chooseCoupons(n){if(n>context.needed||n>wallet.general)return;context.used=n;redraw();}
 function beginUnlock(){refreshWallet();if(!configured(normalAdName())){context.used=0;context.choice='ad';context.progress=context.needed;settleUnlock();return;}if((context.used>0||context.choice!=='ad')&&!state.logged){requireLogin(beginUnlock);return;}if(context.kind==='watermark'){context.used=context.choice==='ad'?0:1;}const cost=context.used;if(context.kind==='watermark'&&context.choice==='watermark'&&wallet.watermark<1){toast('没有可用的去水印券');return;}if(!(context.kind==='watermark'&&context.choice==='watermark')&&cost>wallet.general){toast('没有足够的通用券');return;}
  const remaining=context.needed-context.used-context.progress;
  if(remaining<=0){settleUnlock();return;}
- const autoWallpaper=context.kind==='wallpaper'&&context.wallpaperAutoAds;
- const base=context.kind==='wallpaper'?(autoWallpaper?'new-unlock-progress':'new-wallpaper-unlock'):context.kind==='watermark'?'new-unlock-watermark':'new-unlock-save';
- playAd(()=>{context.progress++;if(context.progress+context.used<context.needed){if(autoWallpaper)beginUnlock();else go('new-unlock-progress',false);}else settleUnlock();},base);
+ const skipPicker=context.skipCouponPicker;
+ const base=context.kind==='wallpaper'?(skipPicker?'new-unlock-progress':'new-wallpaper-unlock'):context.kind==='watermark'?'new-unlock-watermark':'new-unlock-save';
+ playAd(()=>{
+  context.progress++;
+  if(context.progress+context.used>=context.needed)settleUnlock();
+  else if(skipPicker)beginUnlock();
+  else go('new-unlock-progress',false);
+ },base,'rewarded',null,!skipPicker);
 }
 function settleUnlock(){const type=context.kind==='watermark'&&context.choice==='watermark'?'watermark':'general';const used=spend(type,context.used,context.kind==='wallpaper'?'设置壁纸':context.kind==='watermark'?'去水印':'保存');if(used===null){toast('没有足够的可用券');return;}
  if(context.kind==='watermark'){state.watermark=true;go(context.origin,false);persist();toast('已去水印');}
@@ -93,13 +133,13 @@ const localWallpaperAdapter=async()=>({status:'success',source:'local-demo'});
 let wallpaperAdapter=localWallpaperAdapter;
 function wallpaperOrigin(){return ['new-wallpaper-static','new-wallpaper-motion','new-wallpaper-video','new-wallpaper-custom','new-wallpaper-custom-result','new-wallpaper-history-detail'].includes(context.origin)?context.origin:'new-wallpaper';}
 function wallpaperHelp(node,title,description){if(!node)return node;node.dataset.helpTitle=title;node.dataset.help=description;node.dataset.helpStatus='已确认';return node;}
-function cancelWallpaper(){const attempt=wallpaperAttempt;wallpaperAttempt=null;wallpaperAttemptSequence++;window.VIP_ACCESS?.wallpaperOutcome('cancel',attempt?.asset||context.wallpaperAsset,attempt?.mode||context.wallpaperMode);delete pendingWallpaper[attempt?.key||wallpaperKey()];context.progress=0;context.used=0;context.choice='ad';context.wallpaperAutoAds=false;remember();returnToScreen(wallpaperOrigin());toast('已取消设置');}
+function cancelWallpaper(){const attempt=wallpaperAttempt;wallpaperAttempt=null;wallpaperAttemptSequence++;window.VIP_ACCESS?.wallpaperOutcome('cancel',attempt?.asset||context.wallpaperAsset,attempt?.mode||context.wallpaperMode);delete pendingWallpaper[attempt?.key||wallpaperKey()];context.progress=0;context.used=0;context.choice='ad';context.skipCouponPicker=false;remember();returnToScreen(wallpaperOrigin());toast('已取消设置');}
 function completeWallpaper(attempt=wallpaperAttempt){
  if(!attempt||attempt.status!=='success'||attempt.completed||!pendingWallpaper[attempt.key])return false;
  attempt.completed=true;delete pendingWallpaper[attempt.key];remember();
  window.WALLPAPER_V2?.recordSuccess(attempt.asset,attempt.mode,attempt.resource);
  window.VIP_ACCESS?.wallpaperOutcome('success',attempt.asset,attempt.mode);window.TEMPLATE_METRICS?.wallpaperSaved();
- context.progress=0;context.used=0;context.wallpaperAutoAds=false;remember();return true;
+ context.progress=0;context.used=0;context.skipCouponPicker=false;remember();return true;
 }
 function wallpaperResultBack(){if(wallpaperAttempt?.status==='pending'){cancelWallpaper();return;}returnToScreen(wallpaperOrigin());}
 function applyWallpaper(){
@@ -150,9 +190,25 @@ function showWallpaperFailure(root,code){renderWallpaperSystem(root,state.screen
 function wallpaperKey(){return (context.wallpaperAsset||'official')+':'+context.wallpaperMode;}
 function prepareWallpaper(mode){context.wallpaperMode=mode;const proceed=()=>prepareWallpaperCore(mode);if(pendingWallpaper[wallpaperKey()])return proceed();if(window.WALLPAPER_V2?.beforePrepare(mode,()=>resumeWallpaperHistory(mode)))return;if(window.VIP_ACCESS?.beforeWallpaper(mode,proceed))return;return proceed();}
 function resumeWallpaperHistory(mode){context.wallpaperMode=mode;context.kind='wallpaper';context.choice='ad';context.needed=0;context.used=0;context.progress=0;context.origin=state.screen;pendingWallpaper[wallpaperKey()]=true;remember();applyWallpaper();}
-function prepareWallpaperCore(mode){context.wallpaperMode=mode;context.kind='wallpaper';context.choice='ad';if(!state.screen.startsWith('new-wallpaper-unlock')&&state.screen!=='new-wallpaper-system'&&!W[state.screen]?.wallpaperFailure)context.origin=state.screen;context.needed=mode==='static'?1:2;context.used=0;context.progress=0;if(pendingWallpaper[wallpaperKey()])return applyWallpaper();refreshWallet();if(!configured(normalAdName())){context.needed=0;pendingWallpaper[wallpaperKey()]=true;remember();return applyWallpaper();}context.wallpaperAutoAds=wallet.general<=0;if(context.wallpaperAutoAds)return beginUnlock();go('new-wallpaper-unlock');}
+function prepareWallpaperCore(mode){
+ context.wallpaperMode=mode;
+ context.kind='wallpaper';
+ context.choice='ad';
+ if(!state.screen.startsWith('new-wallpaper-unlock')&&state.screen!=='new-wallpaper-system'&&!W[state.screen]?.wallpaperFailure)context.origin=state.screen;
+ context.needed=mode==='static'?1:2;
+ context.used=0;
+ context.progress=0;
+ if(pendingWallpaper[wallpaperKey()])return applyWallpaper();
+ if(!configured(normalAdName())){
+  context.needed=0;
+  pendingWallpaper[wallpaperKey()]=true;
+  remember();
+  return applyWallpaper();
+ }
+ showCouponPicker('new-wallpaper-unlock');
+}
 function wireframeNav(root,k){for(const [label,x,fn] of [['首页',0,()=>go('home')],['壁纸',93.75,()=>go('new-wallpaper')],['作品',187.5,()=>go('works')],['我的',281.25,profile]])region(root,k,label,x,740,93.75,60,fn);}
-function renderNew(k,root){if(pendingFeedbackLogin&&state.screen!==pendingFeedbackLogin.screen){if(context.afterLogin===pendingFeedbackLogin.resume)context.afterLogin=null;pendingFeedbackLogin=null;}refreshWallet();root.classList.remove('wireframe');if(!W[k])return false;if(k==='new-retry'){renderRetryPrompt(root);return true;}if(k==='new-wallpaper-unlock'&&(pendingWallpaper[wallpaperKey()]||wallet.general<=0)){root.innerHTML='';context.used=0;context.wallpaperAutoAds=true;Promise.resolve().then(()=>{if(state.screen!==k)return;if(pendingWallpaper[wallpaperKey()])applyWallpaper();else beginUnlock();});return true;}paint(root,k);if(['new-unlock-save','new-unlock-watermark'].includes(k))blendUnlock(root,k);status('新增界面按已确认规则演示 · 账号、支付、广告和系统设置均为本地模拟');
+function renderNew(k,root){if(pendingFeedbackLogin&&state.screen!==pendingFeedbackLogin.screen){if(context.afterLogin===pendingFeedbackLogin.resume)context.afterLogin=null;pendingFeedbackLogin=null;}refreshWallet();root.classList.remove('wireframe');if(!W[k])return false;if(k==='new-retry'){renderRetryPrompt(root);return true;}if(k==='new-wallpaper-unlock'&&(pendingWallpaper[wallpaperKey()]||wallet.general<=0)){root.innerHTML='';context.used=0;context.skipCouponPicker=true;Promise.resolve().then(()=>{if(state.screen!==k)return;if(pendingWallpaper[wallpaperKey()])applyWallpaper();else beginUnlock();});return true;}paint(root,k);if(['new-unlock-save','new-unlock-watermark'].includes(k))blendUnlock(root,k);status('新增界面按已确认规则演示 · 账号、支付、广告和系统设置均为本地模拟');
  if(k==='new-wallpaper-system'||W[k].wallpaperFailure){renderWallpaperSystem(root,k);return true;}
  const custom={'new-invite':renderInvite,'new-invite-records':renderInviteRecords,'new-coupons':renderCoupons,'new-coupon-records':renderCouponRecords,'new-member':renderMember,'new-member-active':renderMemberActive,'new-feedback':renderFeedback};if(custom[k]){custom[k](root);return true;}
  if(k==='new-invite-share-new'){
@@ -285,7 +341,7 @@ function renderInvite(root){const progress=inviteProgress();const b=grayPage(roo
 function renderInviteRecords(root){renderInvite(root);}
 function couponRecords(){const used=ledger.filter(row=>row.sign==='−'||row.sign==='-'||!row.sign).map((row,index)=>({...row,id:row.id||'legacy-use-'+index,status:'使用',type:couponName(row.type),n:Math.max(0,(Number(row.n)||0)-(Number(row.returned)||0)),time:rewardTime(row.at)})).filter(row=>row.n>0);const expired=couponBatches.filter(row=>row.count>0&&row.expiry<=Date.now()).map(row=>({id:'expired-'+row.id,status:'过期',type:couponName(row.type),n:row.count,purpose:row.source,time:rewardTime(row.expiry)}));return [...used,...expired].sort((a,b)=>(b.time||0)-(a.time||0));}
 function renderCouponRecords(root){refreshWallet();const rows=state.logged?couponRecords():[];const body=grayPage(root,`<div class="confirmed-coupon-records">${state.logged?rows.map(row=>`<article class="confirmed-card coupon-record" data-coupon-record="${esc(row.status)}" ${rewardsHelp(row.status+'记录',row.status==='使用'?'显示实际成功消耗的券数量；失败未完成的抵扣不计消耗。':'只显示到期时没有用完的券；已使用的部分不重复计为过期。')}><div class="coupon-record-heading"><h3>${esc(row.type)} × ${row.n}</h3><span class="coupon-record-state">${row.status}</span></div><p>${esc(row.purpose||'')}</p><small>${row.status==='过期'?'过期':'使用'}时间：${rewardDate(row.time)}${row.time===null?'':'（印度时间）'}</small></article>`).join('')||'<p class="confirmed-note">暂无使用或过期记录</p>':act('Google 登录后查看','login',true)}</div>`);body.onclick=e=>{if(e.target.closest('[data-new-action=login]'))requireLogin(()=>go('new-coupon-records',false));};}
-function renderCoupons(root){refreshWallet();const available=couponBatches.filter(b=>b.count>0&&b.expiry>Date.now()).sort((a,b)=>a.expiry-b.expiry);const body=grayPage(root,`<h2 ${rewardsHelp('可用券余额','分别统计未过期且尚未使用的通用券和去水印券。通用券可抵保存、去水印和壁纸设置广告，VIP体验广告除外；去水印券只能去水印。')}>通用 ${state.logged?wallet.general:0} · 去水印 ${state.logged?wallet.watermark:0}</h2><p class="confirmed-note" ${rewardsHelp('用券顺序','用户主动选择用券，系统优先使用快过期的同类券。')}>通用券可抵保存、去水印和壁纸设置广告；VIP体验广告不可用券。去水印券仅用于去水印，优先用快过期的券。</p><div class="confirmed-coupon-list">${state.logged?available.map(b=>`<article class="confirmed-card" ${rewardsHelp('可用'+couponName(b.type),'显示该批次尚未使用的券数量、来源及到期时间。到期后从可用列表移到记录，标为过期。')}><h3>${couponName(b.type)} × ${b.count}</h3><p>${esc(b.source)}</p><small>到期：${rewardDate(b.expiry)}（印度时间）</small></article>`).join('')||'<p>暂无可用券</p>':act('Google 登录后查看','login',true)}</div>`);body.onclick=e=>{if(e.target.closest('[data-new-action=login]'))requireLogin(()=>go('new-coupons',false));};const record=grayButton(root,'记录',318,45,41,38,()=>requireLogin(()=>go('new-coupon-records')));record.classList.add('coupon-record-link');record.setAttribute('data-help-title','券记录');record.setAttribute('data-help','查看券的使用和过期记录；保存失败返还的券不重复计为已使用。');}
+function renderCoupons(root){refreshWallet();const available=couponBatches.filter(b=>b.count>0&&b.expiry>Date.now()).sort((a,b)=>a.expiry-b.expiry);const body=grayPage(root,`<h2 ${rewardsHelp('可用券余额','分别统计未过期且尚未使用的通用券和去水印券。通用券可抵保存、去水印和壁纸设置广告，VIP体验广告除外；去水印券只能去水印。')}>通用 ${state.logged?wallet.general:0} · 去水印 ${state.logged?wallet.watermark:0}</h2><p class="confirmed-note" ${rewardsHelp('用券顺序','默认选中本次能抵扣的最多张数。确认后优先使用快到期的可用券，无适用券时直接进入广告。')}>通用券可抵保存、去水印和壁纸设置广告；VIP体验广告不可用券。去水印券仅用于去水印，优先用快过期的券。</p><div class="confirmed-coupon-list">${state.logged?available.map(b=>`<article class="confirmed-card" ${rewardsHelp('可用'+couponName(b.type),'显示该批次尚未使用的券数量、来源及到期时间。到期后从可用列表移到记录，标为过期。')}><h3>${couponName(b.type)} × ${b.count}</h3><p>${esc(b.source)}</p><small>到期：${rewardDate(b.expiry)}（印度时间）</small></article>`).join('')||'<p>暂无可用券</p>':act('Google 登录后查看','login',true)}</div>`);body.onclick=e=>{if(e.target.closest('[data-new-action=login]'))requireLogin(()=>go('new-coupons',false));};const record=grayButton(root,'记录',318,45,41,38,()=>requireLogin(()=>go('new-coupon-records')));record.classList.add('coupon-record-link');record.setAttribute('data-help-title','券记录');record.setAttribute('data-help','查看券的使用和过期记录；保存失败返还的券不重复计为已使用。');}
 const MEMBER_PLAN_LABELS={week:'周卡',month:'月卡',year:'年卡'};
 function memberDisplayCopy(rules,plan=member.plan){const p=window.MEMBER_BENEFITS.forPlan(rules,plan);return (plan==='year'?'开通赠'+p.initialCount+'张，之后每月赠'+p.monthlyCount+'张':'每期赠'+p.initialCount+'张通用券')+'，每日'+p.dailyCount+'张；券用完可继续看广告解锁。';}
 function memberRenewalCopy(){return '<div class="member-renewal-copy"><p><strong>续费规则</strong></p><p>未到期续费从已购买期限的到期日接续，基础赠券等新周期开始再发。提前续费额外奖励在付款确认后立即送，到新购套餐结束时过期。</p><p>新套餐按顺序生效，不提前切换。周卡每日券共7次：生效日先发当天日券，之后6个印度零点发放，当天有效。月卡、年卡按对应有效天数发放，同日不重复发。</p><p>周卡每7天、月卡每月、年卡每年自动续订，可在管理订阅中取消。</p></div>';}
@@ -387,7 +443,13 @@ function enhance(k,root){
   const button=grayButton(root,'问题反馈',150,629,75,22,()=>gotoFeedback(k));button.classList.add('native-feedback-link');button.setAttribute('data-help-title','问题反馈');button.setAttribute('data-help','登录后反馈本次刚完成的图片结果。未登录先显示Google登录；取消后留在本次保存成功页。');
  }
  if(['save-image','confirm-video'].includes(k)){
-  const b=root.querySelector('[data-action="确认保存"]');if(b)b.onclick=()=>{const proceed=()=>{if(state.quality==='standard'||state.unlocks[state.quality+'-'+state.type])finishSave();else unlockSave();};if(window.VIP_ACCESS?.beforeResultAction(proceed))return;proceed();};
+  const b=root.querySelector('[data-action="确认保存"]');
+  if(state.quality!=='standard'&&!state.unlocks[state.quality+'-'+state.type]&&wallet.general>0){
+   const hint=entries(k).find(layer=>layer.type==='text'&&/观看1条广告/.test(layer.text));
+   const quantity=Math.min(state.quality==='uhd'?2:1,wallet.general);
+   if(hint)setText(root,hint,'可用 '+quantity+' 张通用券抵扣');
+  }
+  if(b)b.onclick=()=>{const proceed=()=>{if(state.quality==='standard'||state.unlocks[state.quality+'-'+state.type])finishSave();else unlockSave();};if(window.VIP_ACCESS?.beforeResultAction(proceed))return;proceed();};
  }
 }
 function cancelLoginIntent(){
