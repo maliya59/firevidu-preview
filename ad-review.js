@@ -120,9 +120,44 @@ function annotate(){
  if(document.body.dataset.workspace==='admin')for(const el of document.querySelectorAll('.admin-menu button,.admin-menu a,#admin-content h2,#admin-content label,#admin-content th')){if(el.closest('.metrics-admin'))continue;const title=el.dataset.helpTitle||el.textContent||'';if(el.matches('#admin-content label')&&el.querySelector('[data-filter="featured"]')){el.querySelector('.review-dot')?.remove();continue;}if(/VIP|精选|壁纸|会员|反馈|草稿|取消创建|重试|生成时间|到期时间|翻译|广告配置/.test(title))dot(el,title.slice(0,24),el.dataset.help||details.admin);}
 }
 function playbackUI(root){if(playback?.newSlot&&['ad-image','ad-video'].includes(state.screen)&&!root.querySelector('.review-playing-ad')){const el=document.createElement('section');el.className='review-playing-ad';el.innerHTML='<strong>'+ (playback.type==='rewarded'?'激励广告':'插页广告')+'</strong><small>本地广告模拟</small>';root.append(el);}for(const el of root.querySelectorAll('[data-vip-access=watch]')){el.classList.add('review-reward-action');}for(const el of root.querySelectorAll('.wp-v2-mode-primary,.wp-v2-mode-static')){if(/观看|广告/.test(el.textContent)&&!/无需|免广告/.test(el.textContent)){el.classList.add('review-reward-action');}}}
-function enhance(){const root=$('#screen');playbackUI(root);wallpaperBanner(root);if(state.screen==='new-coupons')rewardEntry(root);annotate();}
+const couponRuleNote=$('#coupon-rule-note');
+const couponRulePointer=couponRuleNote?.querySelector('.coupon-rule-pointer');
+function positionCouponRuleArrow(){
+ if(!couponRuleNote||couponRuleNote.hidden)return;
+ const entry=$('#screen').querySelector('.review-coupon-entry');
+ const origin=couponRulePointer.getBoundingClientRect();
+ const target=entry?.getBoundingClientRect();
+ const viewport=entry?.parentElement.getBoundingClientRect();
+ const top=target?Math.max(target.top,viewport.top):0;
+ const bottom=target?Math.min(target.bottom,viewport.bottom):0;
+ const visible=bottom>top&&origin.left>target.right;
+ couponRulePointer.classList.toggle('is-pointing',visible);
+ if(!visible)return;
+ const x=target.right-4-origin.left;
+ const y=(top+bottom)/2-origin.top;
+ couponRulePointer.style.setProperty('--arrow-length',Math.hypot(x,y)+'px');
+ couponRulePointer.style.setProperty('--arrow-angle',Math.atan2(y,x)+'rad');
+}
+
+function enhanceCouponWallet(root){
+ const isWallet=state.screen==='new-coupons';
+ if(couponRuleNote)couponRuleNote.hidden=!isWallet;
+ if(isWallet){
+  rewardEntry(root);
+  if(couponRuleNote)requestAnimationFrame(positionCouponRuleArrow);
+ }
+}
+
+if(couponRuleNote){
+ const resizeObserver=new ResizeObserver(positionCouponRuleArrow);
+ resizeObserver.observe($('#phone-wrap'));
+ resizeObserver.observe(couponRuleNote);
+ $('#screen').addEventListener('scroll',positionCouponRuleArrow,true);
+}
+
+function enhance(){const root=$('#screen');playbackUI(root);wallpaperBanner(root);enhanceCouponWallet(root);annotate();}
 const oldRender=render;render=function(){oldRender();enhance();};
-let queued=false;const obs=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;playbackUI($('#screen'));wallpaperBanner($('#screen'));annotate();if(state.screen==='new-coupons')rewardEntry($('#screen'));});});obs.observe($('#screen'),{childList:true,subtree:true});obs.observe($('#modal-host'),{childList:true,subtree:true});const adminHost=document.querySelector('#admin-workspace');if(adminHost)obs.observe(adminHost,{childList:true,subtree:true});
+let queued=false;const obs=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;playbackUI($('#screen'));wallpaperBanner($('#screen'));annotate();enhanceCouponWallet($('#screen'));});});obs.observe($('#screen'),{childList:true,subtree:true});obs.observe($('#modal-host'),{childList:true,subtree:true});const adminHost=document.querySelector('#admin-workspace');if(adminHost)obs.observe(adminHost,{childList:true,subtree:true});
 // 选图、编辑、制作和弹窗访问使本次详情失去纯浏览资格。
  document.addEventListener('click',event=>{if(!detail||event.target.closest('.review-dot,.review-fullscreen'))return;const el=event.target.closest('button');if(el&&!/返回/.test(el.dataset.action||el.getAttribute('aria-label')||'')&&!el.closest('.review-guide'))detail.dirty=true;},true);
  const originalOpen=openModal;openModal=function(...args){if(detail)detail.dirty=true;return originalOpen(...args);};
