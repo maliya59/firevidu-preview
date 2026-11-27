@@ -55,10 +55,13 @@ img, svg { display: block; max-width: 100%; }
 .feature h3 { font-size: 19px; font-weight: 500; margin: 0; letter-spacing: -.4px; }
 .feature p { font-size: 14px; line-height: 1.85; color: var(--muted); margin: 12px 0 0; max-width: 340px; }
 .site-footer { border-top: 1px solid var(--line); }
-.simple-footer { display: flex; align-items: center; gap: 24px; padding-block: 28px; }
+.simple-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding-block: 28px; }
 .simple-footer .brand { font-size: 21px; }
 .simple-footer p { font-size: 12px; color: #c1a2c9; margin: 0; }
-.simple-footer small { font-size: 11px; color: #bca0c5; margin-left: auto; }
+.footer-links { display: flex; align-items: center; gap: 22px; margin-left: auto; font-size: 12px; color: var(--muted); }
+.footer-links a { display: inline-flex; align-items: center; min-height: 44px; text-underline-offset: 4px; }
+.footer-links a:hover { color: #ffcfb5; text-decoration: underline; }
+.simple-footer small { font-size: 11px; color: #bca0c5; }
 @media (min-width: 1500px) {
   .hero { min-height: 680px; }
   .hero h1 { font-size: 88px; }
@@ -103,6 +106,7 @@ img, svg { display: block; max-width: 100%; }
   .simple-footer .brand { font-size: 20px; }
   .simple-footer .brand img { width: 34px; height: 34px; }
   .simple-footer p { margin-left: auto; font-size: 10px; }
+  .footer-links { width: 100%; margin-left: 0; gap: 24px; }
   .simple-footer small { margin-left: 0; width: 100%; padding-top: 12px; border-top: 1px solid #ffffff12; font-size: 10px; }
 }
 @media (max-width: 380px) {
